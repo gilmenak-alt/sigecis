@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>SIGECIS</title>
+
+<link rel="stylesheet" href="css/estilos.css">
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #333333;
+  }
+
+  .top-hero-image img {
+    width: 100%;
+    max-height: 320px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .site-header {
+    width: 100%;
+    background-color: #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  }
+
+  .site-header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: #007bff;
+  }
+
+  .brand h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: normal;
+    color: #666666;
+  }
+
+  .main-nav {
+    display: flex;
+    gap: 16px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .main-nav a {
+    text-decoration: none;
+    font-size: 14px;
+    color: #555555;
+  }
+
+  .main-nav a:hover {
+    color: #007bff;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .btn-login-header {
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+  }
+
+  .btn-login-header:hover {
+    background-color: #0056b3;
+  }
+
+  .hero-intro {
+    max-width: 1100px;
+    margin: 24px auto 16px auto;
+    padding: 0 24px;
+    text-align: center;
+  }
+
+  .hero-intro .eslogan {
+    margin-top: 8px;
+    font-size: 15px;
+    color: #555555;
+  }
+
+  .section-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .section-wrapper section {
+    margin-bottom: 32px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 24px 24px 28px 24px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  }
+
+  .section-wrapper h2 {
+    margin-top: 0;
+    color: #222222;
+  }
+
+  .cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 16px;
+  }
+
+  .card {
+    flex: 1 1 220px;
+    background-color: #f8f9ff;
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+
+  .card h3 {
+    margin-top: 0;
+    color: #007bff;
+  }
+
+  .servicios {
+    text-align: center;
+  }
+
+  .imagen-servicios {
+    max-width: 100%;
+    border-radius: 10px;
+    margin: 12px 0 18px 0;
+  }
+
+  .pasos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 18px;
+  }
+
+  .paso {
+    flex: 1 1 160px;
+    text-align: center;
+    background-color: #f8f9ff;
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .paso h3 {
+    margin: 0 0 8px 0;
+    font-size: 22px;
+    color: #007bff;
+  }
+
+  .cta {
+    text-align: center;
+  }
+
+  .cta .btn {
+    margin-top: 10px;
+    background-color: #007bff;
+    color: #ffffff;
+  }
+
+  .cta .btn:hover {
+    background-color: #0056b3;
+  }
+
+  footer {
+    text-align: center;
+    padding: 18px 16px 24px 16px;
+    font-size: 13px;
+    color: #777777;
+  }
+
+  @media (max-width: 768px) {
+    .site-header-inner {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .main-nav {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .btn-login-header {
+      align-self: flex-end;
+    }
+  }
+</style>
+
+<script src="js/script.js"></script>
+
+</head>
+
+<body>
+
+<div class="top-hero-image">
+<img src="img/encabezado.jpg" alt="Imagen principal del salón de belleza">
+</div>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <div class="brand">
+      <h1>SIGECIS</h1>
+      <h2>Sistema de Gestión de Citas y Servicios</h2>
+    </div>
+
+    <nav class="main-nav">
+      <a href="#info">Inicio</a>
+      <a href="#beneficios">Beneficios</a>
+      <a href="#servicios">Servicios</a>
+      <a href="#funciona">Cómo funciona</a>
+    </nav>
+
+    <a href="login.html" class="btn btn-login-header">Iniciar sesión</a>
+  </div>
+</header>
+
+<div class="hero-intro">
+  <h2>Organiza tu salón con estilo</h2>
+  <p class="eslogan">
+  Organiza, agenda y gestiona los servicios de tu salón de belleza de manera fácil y eficiente con una experiencia tan moderna como tu negocio.
+  </p>
+</div>
+
+<div class="section-wrapper">
+
+<section id="info" class="info">
+
+<h2>¿Qué es SIGECIS?</h2>
+
+<p>
+
+SIGECIS es una plataforma diseñada para optimizar la gestión de citas,
+clientes y servicios en salones de belleza. Permite organizar reservas,
+controlar servicios y gestionar pagos de forma rápida y eficiente.
+
+</p>
+
+}</section>
+
+
+<section id="beneficios" class="beneficios">
+
+<h2>Ventajas de utilizar SIGECIS</h2>
+
+<div class="cards">
+
+<div class="card">
+<h3>Gestión eficiente de citas</h3>
+<p>Programar, consultar o cancelar citas fácilmente.</p>
+</div>
+
+<div class="card">
+<h3>Administración de clientes</h3>
+<p>Registro organizado de los clientes.</p>
+</div>
+
+<div class="card">
+<h3>Control de servicios</h3>
+<p>Gestión de servicios y precios.</p>
+</div>
+
+<div class="card">
+<h3>Pagos y reportes</h3>
+<p>Registro de pagos y estadísticas del negocio.</p>
+</div>
+
+</div>
+
+}</section>
+
+
+<section id="servicios" class="servicios">
+
+<h2>Nuestros servicios</h2>
+
+<img src="img/servicios.png" class="imagen-servicios">
+
+<p>
+
+Nuestro salón ofrece cortes de cabello, tratamientos capilares,
+coloración, manicura, pedicura y maquillaje profesional
+para resaltar tu estilo y cuidar tu imagen.
+
+</p>
+
+}</section>
+
+
+<section id="funciona" class="funciona">
+
+<h2>Agenda tu cita en pocos pasos</h2>
+
+<div class="pasos">
+
+<div class="paso">
+<h3>1</h3>
+<p>Selecciona el servicio</p>
+</div>
+
+<div class="paso">
+<h3>2</h3>
+<p>Escoge el profesional</p>
+</div>
+
+<div class="paso">
+<h3>3</h3>
+<p>Elige fecha y hora</p>
+</div>
+
+<div class="paso">
+<h3>4</h3>
+<p>Confirma tu cita</p>
+</div>
+
+</div>
+
+}</section>
+
+
+<section class="cta">
+
+<h2>Agenda tu próxima cita</h2>
+
+<p>
+Disfruta de una experiencia organizada y profesional gracias a SIGECIS.
+</p>
+
+<a href="cliente/agendar.html" class="btn">Reservar cita ahora</a>
+
+}</section>
+
+</div>
+
+<footer>
+
+<p>
+SIGECIS – Sistema de Gestión de Citas y Servicios
+</p>
+
+<p>
+Plataforma diseñada para optimizar la administración de citas,
+clientes y servicios en salones de belleza.
+</p>
+
+</footer>
+
+</body>
+</html>

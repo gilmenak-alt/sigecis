@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGECIS – Login</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    .split { display: flex; min-height: 100vh; width: 100%; }
+    .split .img { flex: 0 0 70%; width: 70%; background: var(--linen); }
+    .split .img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .split .formWrap { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .back-link { margin-bottom: 10px; display: flex; justify-content: flex-end; }
+    @media (max-width: 900px) {
+      .split { flex-direction: column; }
+      .split .img { flex: none; width: 100%; height: 40vh; min-height: 220px; }
+      .back-link { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="split">
+    <div class="img">
+      <img src="/img/login.jpg" alt="Salón" onerror="this.style.display='none'">
+    </div>
+    <div class="formWrap">
+      <div class="card" style="width:100%;max-width:380px;">
+        <div class="back-link">
+          <a class="btn btn-ghost" href="/">← Volver al inicio</a>
+        </div>
+        <h2 style="margin-top:0;">Iniciar sesión</h2>
+        <div id="msg"></div>
+        <form class="form" id="loginForm">
+          <input id="correo" type="email" placeholder="Correo" required />
+          <input id="password" type="password" placeholder="Contraseña" required />
+          <button class="btn btn-primary" type="submit">Ingresar</button>
+        </form>
+        <div class="muted" style="margin-top:10px;">
+          ¿No tienes cuenta? <a href="/pages/register.html">Regístrate</a>
+        </div>
+        <div class="muted" style="margin-top:8px;">
+          Demo: <strong>admin@salon.com</strong> / <strong>1234</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      msg.innerHTML = "";
+      try {
+        const correo = document.getElementById("correo").value.trim();
+        const password = document.getElementById("password").value;
+        const r = await login(correo, password);
+        redirectByRole(r.user.rol);
+      } catch (err) {
+        msg.innerHTML = `<div class="error">${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

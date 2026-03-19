@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGECIS – Inicio</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>SIGECIS</h1>
+          <span>Sistema de Gestión de Citas y Servicios</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <a class="btn btn-ghost" href="/pages/register.html">Registro</a>
+        <a class="btn btn-primary" href="/pages/login.html">Iniciar sesión</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero hero-inicio">
+    <img class="hero-img" src="/img/inicio.jpg" alt="Salón de belleza" onerror="this.style.display='none'">
+    <div class="hero-body">
+        <h2>Tu salón de confianza, ahora también en línea</h2>
+        <p class="muted">
+          Reserva en pocos clics, evita esperas y disfruta una experiencia pensada para ti.
+        </p>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;">
+          <a class="btn btn-primary" href="/pages/register.html">Crear cuenta</a>
+          <a class="btn btn-ghost" href="#por-que">Ver beneficios</a>
+        </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div id="por-que" class="card" style="margin-top:16px;">
+      <div class="grid grid-2">
+        <div>
+          <h3>¿Por qué reservar con SIGECIS?</h3>
+          <ul class="muted">
+            <li>Elige el servicio y el profesional que prefieras.</li>
+            <li>Ve tu agenda de citas en un solo lugar.</li>
+            <li>Recibe recordatorios y evita perder tu turno.</li>
+            <li>Ahorra tiempo: agenda cuando quieras, desde donde quieras.</li>
+          </ul>
+        </div>
+        <div>
+          <h3>Servicios</h3>
+          <p class="muted">Conoce cada servicio con detalle: descripción y precios.</p>
+          <div id="serviciosList" class="muted">Cargando...</div>
+          <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+            <a class="btn btn-primary" href="/pages/servicios.html">Ver todos los servicios</a>
+            <a class="btn btn-ghost" href="/pages/register.html">Registrarme</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script>
+    (async () => {
+      try {
+        const servicios = await apiFetch("/api/servicios");
+        const html = "<ul>" + (servicios || []).slice(0, 5).map(s => `<li><strong>${s.nombre}</strong> – $${Number(s.precio).toLocaleString()}</li>`).join("") + "</ul><p class=\"muted\" style=\"margin-top:8px;\">Y más…</p>";
+        document.getElementById("serviciosList").innerHTML = html;
+      } catch (e) {
+        document.getElementById("serviciosList").innerHTML = "<div class='error'>No se pudo cargar servicios.</div>";
+      }
+    })();
+  </script>
+</body>
+</html>

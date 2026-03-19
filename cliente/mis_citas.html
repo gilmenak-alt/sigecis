@@ -1,0 +1,37 @@
+<h2>Mis citas</h2>
+
+<table id="tabla"></table>
+
+<script>
+
+let citas=JSON.parse(localStorage.getItem("citas"));
+
+let tabla=document.getElementById("tabla");
+
+tabla.innerHTML=
+
+"<tr><th>Cliente</th><th>Servicio</th><th>Costo</th><th>Fecha</th><th>Hora</th></tr>";
+
+citas.forEach(c=>{
+
+tabla.innerHTML+=`
+
+<tr>
+
+<td>${c.cliente}</td>
+
+<td>${c.servicio}</td>
+
+<td>$${c.precio}</td>
+
+<td>${c.fecha}</td>
+
+<td>${c.hora}</td>
+
+</tr>
+
+`;
+
+});
+
+</script>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGECIS – Registro</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      background: url("/img/login.jpg") center/cover no-repeat fixed;
+      position: relative;
+    }
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.75);
+      backdrop-filter: blur(2px);
+      z-index: 0;
+    }
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .center-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>SIGECIS</h1>
+            <span>Registro de Cliente</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <a class="btn btn-ghost" href="/">← Inicio</a>
+          <a class="btn btn-ghost" href="/pages/login.html">Ya tengo cuenta</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="center-wrap">
+      <div class="card" style="width:100%;max-width:480px;">
+        <h2 style="margin-top:0;text-align:center;">Crea tu cuenta</h2>
+        <p class="muted" style="text-align:center;">
+          Reserva tus servicios favoritos, consulta tu historial y recibe un trato más personalizado.
+        </p>
+        <div id="msg"></div>
+        <form class="form" id="regForm">
+          <input id="nombre" placeholder="Nombre completo" required />
+          <div class="row">
+            <input id="telefono" type="tel" placeholder="Teléfono" inputmode="numeric" pattern="[0-9]*" maxlength="15" autocomplete="tel" />
+            <input id="correo" type="email" placeholder="Correo" required />
+          </div>
+          <input id="password" type="password" placeholder="Contraseña" minlength="4" required />
+          <button class="btn btn-primary" type="submit">Registrar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    // Teléfono: solo números
+    (function onlyDigitsTelefono() {
+      const tel = document.getElementById("telefono");
+      if (!tel) return;
+      tel.addEventListener("input", () => {
+        const cleaned = String(tel.value || "").replace(/\D+/g, "");
+        if (tel.value !== cleaned) tel.value = cleaned;
+      });
+      tel.addEventListener("paste", (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData("text");
+        tel.value = String(text || "").replace(/\D+/g, "").slice(0, 15);
+      });
+    })();
+
+    document.getElementById("regForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg");
+      msg.innerHTML = "";
+      try {
+        await registerCliente({
+          nombre: document.getElementById("nombre").value.trim(),
+          telefono: document.getElementById("telefono").value.trim(),
+          correo: document.getElementById("correo").value.trim(),
+          password: document.getElementById("password").value
+        });
+        msg.innerHTML = "<div class='notice'>Registro exitoso. Ahora inicia sesión.</div>";
+        setTimeout(() => window.location = "/pages/login.html", 900);
+      } catch (err) {
+        msg.innerHTML = `<div class="error">${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGECIS – Servicios</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    .servicio-card-detalle {
+      background: var(--parchment);
+      border: 1px solid var(--dust-grey);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .servicio-card-detalle .servicio-img-wrap {
+      width: 100%;
+      height: 180px;
+      background: var(--linen);
+      overflow: hidden;
+    }
+    .servicio-card-detalle .servicio-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .servicio-card-detalle .servicio-body { padding: 16px; flex: 1; display: flex; flex-direction: column; }
+    .servicio-card-detalle h3 { margin: 0 0 6px 0; color: #444; font-size: 1.1rem; }
+    .servicio-card-detalle .precio { font-weight: bold; color: #333; margin-bottom: 10px; }
+    .servicio-card-detalle .desc { font-size: 13px; color: #555; line-height: 1.45; flex: 1; }
+    .servicio-card-detalle .cta { margin-top: 14px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <a href="/" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:10px;">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>SIGECIS</h1>
+            <span>Sistema de Gestión de Citas y Servicios</span>
+          </div>
+        </a>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <a class="btn btn-ghost" href="/">Inicio</a>
+        <a class="btn btn-ghost" href="/pages/register.html">Registro</a>
+        <a class="btn btn-primary" href="/pages/login.html">Iniciar sesión</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2 style="margin-top:0;">Nuestros servicios</h2>
+    <p class="muted" style="margin-bottom:20px;">Conoce cada servicio, precios y descripción. Regístrate o inicia sesión para agendar tu cita.</p>
+    <div id="serviciosGrid" class="grid grid-3" style="gap:20px;"></div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/servicios-data.js"></script>
+  <script>
+    (async function() {
+      const grid = document.getElementById("serviciosGrid");
+      try {
+        const servicios = await apiFetch("/api/servicios");
+        if (!servicios || servicios.length === 0) {
+          grid.innerHTML = "<p class='muted'>No hay servicios cargados.</p>";
+          return;
+        }
+        grid.innerHTML = servicios.map(s => {
+          const desc = getDescripcionServicio(s.nombre) || "Servicio de calidad para tu bienestar.";
+          const imgUrl = getImageUrlServicio(s.nombre);
+          return `
+            <article class="servicio-card-detalle card">
+              <div class="servicio-img-wrap">
+                <img src="${imgUrl}" alt="${(s.nombre || "").replace(/"/g, "&quot;")}" onerror="this.onerror=null;this.src='/img/placeholder.svg';">
+              </div>
+              <div class="servicio-body">
+                <h3>${s.nombre}</h3>
+                <p class="precio">$${Number(s.precio).toLocaleString()}</p>
+                <p class="desc">${desc}</p>
+                <div class="cta">
+                  <a href="/pages/register.html" class="btn btn-primary">Reservar</a>
+                </div>
+              </div>
+            </article>
+          `;
+        }).join("");
+      } catch (e) {
+        grid.innerHTML = "<div class='error'>No se pudieron cargar los servicios.</div>";
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGECIS – Empleado</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="menu-btn" id="menuBtn" title="Menú">☰</button>
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Panel Empleado</h1>
+            <span id="who"></span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-danger" id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="sidebar-layout">
+      <div class="drawer" id="drawer" style="display:none;">
+        <small>Opciones</small>
+        <a href="#" data-section="inicio">Inicio</a>
+        <a href="#" data-section="agenda">Mi agenda</a>
+        <a href="#" data-section="mis-datos">Mis datos y servicios</a>
+      </div>
+
+      <div class="grid" style="gap:16px;">
+        <div id="inicio" class="card emp-panel">
+          <h2 style="margin-top:0;">Bienvenido</h2>
+          <p class="muted" id="empWelcomeText">Aquí puedes acceder a tu agenda y a tus datos.</p>
+          <div class="row" style="flex-wrap:wrap; gap:12px; margin-top:16px;">
+            <a href="#" data-section="agenda" class="btn btn-primary">Ir a Mi agenda</a>
+            <a href="#" data-section="mis-datos" class="btn btn-ghost">Mis datos y servicios</a>
+          </div>
+        </div>
+
+        <div id="agenda" class="card emp-panel" style="display:none;">
+          <h2 style="margin-top:0;">Mi agenda</h2>
+          <p class="muted">Tus citas asignadas. Haz clic en un día para ver ese día; en un evento para reprogramar, cancelar o marcar como terminada.</p>
+          <div id="empleadoCalendar"></div>
+          <div id="empleadoModal" class="modal-overlay" style="display:none;" aria-hidden="true">
+            <div class="modal-card">
+              <h3 style="margin-top:0;">Detalle de la cita</h3>
+              <div id="empleadoModalBody"></div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" id="empModalReprogramar">Reprogramar</button>
+                <button type="button" class="btn btn-ghost" id="empModalTerminar">Marcar como terminada</button>
+                <button type="button" class="btn btn-danger" id="empModalCancelar">Cancelar cita</button>
+                <button type="button" class="btn btn-ghost" id="empModalCerrar">Cerrar</button>
+              </div>
+              <div id="empleadoModalReprogramarForm" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #eee;">
+                <label>Nueva fecha <input type="date" id="empRepFecha" /></label>
+                <label>Nueva hora <input type="time" id="empRepHora" /></label>
+                <button type="button" class="btn btn-primary" id="empRepConfirmar">Confirmar reprogramar</button>
+                <button type="button" class="btn btn-ghost" id="empRepCancelar">Volver</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="mis-datos" class="card emp-panel" style="display:none;">
+          <h2 style="margin-top:0;">Mis datos y servicios</h2>
+          <div id="empDatosMsg" class="muted" style="margin-bottom:10px;"></div>
+          <form class="form" id="empDatosForm" style="max-width:480px;">
+            <div class="row">
+              <input id="empNombre" placeholder="Nombre" required />
+              <select id="empEspecialidadServicio" required></select>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar datos</button>
+          </form>
+          <h3 style="margin-top:24px;">Servicios que ofrezco</h3>
+          <p class="muted">Marca los servicios que realizas.</p>
+          <div id="empServiciosList" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
+          <button type="button" class="btn btn-primary" id="empGuardarServicios" style="margin-top:12px;">Guardar servicios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    const drawer = document.getElementById("drawer");
+    document.getElementById("menuBtn").addEventListener("click", () => {
+      drawer.style.display = (drawer.style.display === "none") ? "block" : "none";
+    });
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await logout();
+      window.location = "/pages/login.html";
+    });
+
+    async function ensureEmpleado() {
+      const me = await getMe();
+      if (!me.user) return window.location = "/pages/login.html";
+      if (me.user.rol !== "Empleado") return window.location = "/";
+      document.getElementById("who").textContent = me.user.nombre + " · " + me.user.correo;
+    }
+
+    function showEmpSection(sectionId) {
+      document.querySelectorAll(".emp-panel").forEach(el => {
+        el.style.display = el.id === sectionId ? "block" : "none";
+      });
+      if (sectionId === "agenda") initEmpleadoCalendar();
+      if (sectionId === "mis-datos") loadEmpDatos();
+    }
+
+    document.querySelectorAll("#drawer a[data-section], #inicio a[data-section]").forEach(a => {
+      a.addEventListener("click", function(e) {
+        e.preventDefault();
+        showEmpSection(a.getAttribute("data-section"));
+        if (drawer.style.display !== "none") drawer.style.display = "none";
+      });
+    });
+
+    (function setWelcome() {
+      getMe().then(me => {
+        const el = document.getElementById("empWelcomeText");
+        if (el && me.user) el.textContent = "Hola, " + (me.user.nombre || "empleado") + ". Desde aquí puedes ir a tu agenda o editar tus datos y servicios.";
+      });
+    })();
+
+    async function loadEmpDatos() {
+      try {
+        const perfil = await apiFetch("/api/empleados/me");
+        document.getElementById("empNombre").value = perfil.nombre || "";
+      } catch (e) {
+        // No mostrar mensaje de error al usuario aquí
+        document.getElementById("empDatosMsg").textContent = "";
+      }
+      const [servicios, misServicios] = await Promise.all([
+        apiFetch("/api/servicios"),
+        apiFetch("/api/empleados/me/servicios").catch(() => [])
+      ]);
+      const selEsp = document.getElementById("empEspecialidadServicio");
+      selEsp.innerHTML = (servicios || []).map(s => `<option value="${s.id_servicio}">${s.nombre}</option>`).join("");
+      // seleccionar especialidad si coincide con algún servicio ofrecido
+      if (misServicios && misServicios.length > 0) {
+        selEsp.value = misServicios[0].id_servicio;
+      }
+      const idsOferta = (misServicios || []).map(s => s.id_servicio);
+      const listEl = document.getElementById("empServiciosList");
+      listEl.innerHTML = "";
+      (servicios || []).forEach(s => {
+        const label = document.createElement("label");
+        label.style.display = "flex";
+        label.style.alignItems = "center";
+        label.style.gap = "6px";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.dataset.id = s.id_servicio;
+        cb.checked = idsOferta.includes(s.id_servicio);
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(s.nombre + " ($" + s.precio + ")"));
+        listEl.appendChild(label);
+      });
+    }
+
+    document.getElementById("empDatosForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msgEl = document.getElementById("empDatosMsg");
+      try {
+        const idServicioEsp = Number(document.getElementById("empEspecialidadServicio").value);
+        const servicios = await apiFetch("/api/servicios");
+        const svc = (servicios || []).find(s => Number(s.id_servicio) === idServicioEsp);
+        if (!svc) throw new Error("Especialidad inválida");
+        await apiFetch("/api/empleados/me", {
+          method: "PUT",
+          body: JSON.stringify({
+            nombre: document.getElementById("empNombre").value.trim(),
+            especialidad: svc.nombre
+          })
+        });
+        // asegurar que su especialidad quede incluida en servicios ofrecidos
+        const ids = [];
+        document.querySelectorAll("#empServiciosList input:checked").forEach(cb => ids.push(Number(cb.dataset.id)));
+        if (!ids.includes(idServicioEsp)) ids.push(idServicioEsp);
+        await apiFetch("/api/empleados/me/servicios", { method: "PUT", body: JSON.stringify({ servicios: ids }) });
+        msgEl.textContent = "Datos guardados.";
+        msgEl.className = "notice";
+      } catch (err) {
+        msgEl.textContent = err.message || "Error al guardar.";
+        msgEl.className = "error";
+      }
+    });
+
+    document.getElementById("empGuardarServicios").addEventListener("click", async () => {
+      const msgEl = document.getElementById("empDatosMsg");
+      const ids = [];
+      document.querySelectorAll("#empServiciosList input:checked").forEach(cb => ids.push(Number(cb.dataset.id)));
+      try {
+        await apiFetch("/api/empleados/me/servicios", {
+          method: "PUT",
+          body: JSON.stringify({ servicios: ids })
+        });
+        msgEl.textContent = "Servicios actualizados.";
+        msgEl.className = "notice";
+      } catch (err) {
+        // Silenciar mensaje negativo aquí para evitar "No se pudo cargar..." recurrente
+        msgEl.textContent = "";
+        msgEl.className = "muted";
+      }
+    });
+
+    let empleadoCalendarInstance = null;
+    let empleadoModalEvent = null;
+
+    function initEmpleadoCalendar() {
+      if (empleadoCalendarInstance) return;
+      const calendarEl = document.getElementById("empleadoCalendar");
+      if (!calendarEl) return;
+      empleadoCalendarInstance = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        locale: "es",
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+        },
+        buttonText: { today: "Hoy", month: "Mes", week: "Semana", day: "Día", listWeek: "Lista" },
+        events: function(fetchInfo, successCallback, failureCallback) {
+          const startStr = (fetchInfo && fetchInfo.startStr) ? fetchInfo.startStr : (fetchInfo && fetchInfo.start && fetchInfo.start.toISOString) ? fetchInfo.start.toISOString() : "";
+          const endStr = (fetchInfo && fetchInfo.endStr) ? fetchInfo.endStr : (fetchInfo && fetchInfo.end && fetchInfo.end.toISOString) ? fetchInfo.end.toISOString() : "";
+          const from = String(startStr).slice(0, 10);
+          const to = String(endStr).slice(0, 10);
+          const url = (from && to) ? "/api/citas?format=fullcalendar&from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to) : "/api/citas?format=fullcalendar";
+          apiFetch(url)
+            .then(events => {
+              const list = Array.isArray(events) ? events : [];
+              const withClass = list.map(ev => {
+                const est = (ev.extendedProps && ev.extendedProps.estado) || "Agendada";
+                const cls = est === "Cancelada" ? "fc-event-cancelada" : est === "Terminada" ? "fc-event-terminada" : "fc-event-agendada";
+                return { ...ev, classNames: [cls] };
+              });
+              successCallback(withClass);
+            })
+            .catch(() => {
+              apiFetch("/api/citas?format=fullcalendar").then(events => {
+                const list = Array.isArray(events) ? events : [];
+                const withClass = list.map(ev => {
+                  const est = (ev.extendedProps && ev.extendedProps.estado) || "Agendada";
+                  const cls = est === "Cancelada" ? "fc-event-cancelada" : est === "Terminada" ? "fc-event-terminada" : "fc-event-agendada";
+                  return { ...ev, classNames: [cls] };
+                });
+                successCallback(withClass);
+              }).catch(failureCallback);
+            });
+        },
+        dateClick: function(arg) {
+          if (arg && (arg.dateStr || arg.date)) this.changeView("timeGridDay", arg.dateStr || (arg.date && arg.date.toISOString && arg.date.toISOString().slice(0,10)));
+        },
+        eventClick: function(arg) {
+          arg.jsEvent.preventDefault();
+          empleadoModalEvent = arg.event;
+          const p = arg.event.extendedProps || {};
+          document.getElementById("empleadoModalBody").innerHTML = `
+            <p><strong>Cliente:</strong> ${p.cliente || "-"}<br/>
+            <strong>Servicio:</strong> ${p.servicio || "-"}<br/>
+            <strong>Fecha:</strong> ${p.fecha || "-"} ${p.hora || ""}<br/>
+            <strong>Estado:</strong> ${p.estado || "-"}</p>`;
+          document.getElementById("empleadoModalReprogramarForm").style.display = "none";
+          document.getElementById("empleadoModal").style.display = "flex";
+          document.getElementById("empleadoModal").setAttribute("aria-hidden", "false");
+        }
+      });
+      empleadoCalendarInstance.render();
+    }
+
+    function closeEmpleadoModal() {
+      document.getElementById("empleadoModal").style.display = "none";
+      document.getElementById("empleadoModal").setAttribute("aria-hidden", "true");
+      empleadoModalEvent = null;
+    }
+
+    document.getElementById("empModalCerrar").addEventListener("click", closeEmpleadoModal);
+    document.getElementById("empleadoModal").addEventListener("click", function(e) {
+      if (e.target === this) closeEmpleadoModal();
+    });
+
+    document.getElementById("empModalCancelar").addEventListener("click", async () => {
+      if (!empleadoModalEvent) return;
+      try {
+        await apiFetch("/api/citas/" + empleadoModalEvent.extendedProps.id_cita + "/cancelar", { method: "PUT" });
+        empleadoCalendarInstance.refetchEvents();
+        closeEmpleadoModal();
+      } catch (e) { alert(e.message); }
+    });
+
+    document.getElementById("empModalTerminar").addEventListener("click", async () => {
+      if (!empleadoModalEvent) return;
+      try {
+        await apiFetch("/api/citas/" + empleadoModalEvent.extendedProps.id_cita + "/terminar", { method: "PUT" });
+        empleadoCalendarInstance.refetchEvents();
+        closeEmpleadoModal();
+      } catch (e) { alert(e.message); }
+    });
+
+    document.getElementById("empModalReprogramar").addEventListener("click", () => {
+      if (!empleadoModalEvent) return;
+      const p = empleadoModalEvent.extendedProps;
+      document.getElementById("empRepFecha").value = p.fecha || "";
+      document.getElementById("empRepHora").value = (p.hora || "").slice(0, 5);
+      document.getElementById("empleadoModalReprogramarForm").style.display = "block";
+    });
+
+    document.getElementById("empRepCancelar").addEventListener("click", () => {
+      document.getElementById("empleadoModalReprogramarForm").style.display = "none";
+    });
+
+    document.getElementById("empRepConfirmar").addEventListener("click", async () => {
+      if (!empleadoModalEvent) return;
+      const id = empleadoModalEvent.extendedProps.id_cita;
+      const fecha = document.getElementById("empRepFecha").value;
+      const hora = document.getElementById("empRepHora").value;
+      if (!fecha || !hora) return;
+      try {
+        await apiFetch("/api/citas/" + id + "/reprogramar", {
+          method: "PUT",
+          body: JSON.stringify({ fecha, hora })
+        });
+        document.getElementById("empleadoModalReprogramarForm").style.display = "none";
+        empleadoCalendarInstance.refetchEvents();
+        closeEmpleadoModal();
+      } catch (e) { alert(e.message); }
+    });
+
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible" && empleadoCalendarInstance) empleadoCalendarInstance.refetchEvents();
+    });
+
+    (async () => {
+      await ensureEmpleado();
+      showEmpSection("inicio");
+    })();
+  </script>
+</body>
+</html>
+

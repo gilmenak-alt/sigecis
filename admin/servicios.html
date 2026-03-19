@@ -1,0 +1,45 @@
+<h2>Servicios</h2>
+
+<input id="nombre">
+
+<input id="precio">
+
+<button onclick="agregar()">Agregar</button>
+
+<table id="tabla"></table>
+
+<script>
+
+let servicios=JSON.parse(localStorage.getItem("servicios"));
+
+let tabla=document.getElementById("tabla");
+
+function cargar(){
+
+tabla.innerHTML="<tr><th>Servicio</th><th>Precio</th></tr>";
+
+servicios.forEach(s=>{
+
+tabla.innerHTML+=`<tr><td>${s.nombre}</td><td>${s.precio}</td></tr>`;
+
+});
+
+}
+
+cargar();
+
+function agregar(){
+
+let nombre=document.getElementById("nombre").value;
+
+let precio=document.getElementById("precio").value;
+
+servicios.push({nombre,precio});
+
+localStorage.setItem("servicios",JSON.stringify(servicios));
+
+cargar();
+
+}
+
+</script>

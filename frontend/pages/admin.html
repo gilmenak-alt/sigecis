@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGECIS – Admin</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="menu-btn" id="menuBtn" title="Menú">☰</button>
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Panel Administrador</h1>
+            <span id="who"></span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-danger" id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="sidebar-layout">
+      <div class="drawer" id="drawer" style="display:none;">
+        <small>Sesiones</small>
+        <a href="#" data-section="dashboard">Dashboard</a>
+        <a href="#" data-section="servicios">Servicios</a>
+        <a href="#" data-section="empleados">Empleados</a>
+        <a href="#" data-section="agenda">Agenda</a>
+        <a href="#" data-section="citas">Citas</a>
+        <a href="#" data-section="pagos">Pagos</a>
+        <a href="#" data-section="novedades">Novedades</a>
+        <a href="#" data-section="reportes">Reportes</a>
+      </div>
+
+      <div class="grid" style="gap:16px;">
+        <div id="dashboard" class="card admin-section">
+          <h2 style="margin-top:0;">Dashboard</h2>
+          <div class="kpis">
+            <div class="kpi"><span>Total citas</span><strong id="k_totalCitas">0</strong></div>
+            <div class="kpi"><span>Citas hoy</span><strong id="k_citasHoy">0</strong></div>
+            <div class="kpi"><span>Ingresos</span><strong id="k_ingresos">$0</strong></div>
+            <div class="kpi"><span>Empleados</span><strong id="k_empleados">0</strong></div>
+          </div>
+          <div class="grid grid-2" style="margin-top:14px;">
+            <div class="card">
+              <h3 style="margin-top:0;">Servicios más solicitados</h3>
+              <canvas id="chartServicios" height="140"></canvas>
+            </div>
+            <div class="card">
+              <h3 style="margin-top:0;">Empleados más activos</h3>
+              <canvas id="chartEmpleados" height="140"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div id="servicios" class="card admin-section" style="display:none;">
+          <h2 style="margin-top:0;">Servicios</h2>
+          <div id="svcMsg"></div>
+          <form class="form" id="svcForm" style="max-width:520px;">
+            <div class="row">
+              <input id="svcNombre" placeholder="Nombre del servicio" required />
+              <input id="svcPrecio" type="number" placeholder="Precio" required />
+            </div>
+            <div class="row">
+              <input id="svcDurMin" type="number" placeholder="Duración mín. (min)" min="15" required />
+              <input id="svcDurMax" type="number" placeholder="Duración máx. (min)" min="15" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Agregar servicio</button>
+          </form>
+          <div style="margin-top:12px;overflow:auto;">
+            <table>
+              <thead><tr><th>Servicio</th><th>Precio</th><th>Duración</th><th>Acciones</th></tr></thead>
+              <tbody id="svcTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="empleados" class="card admin-section" style="display:none;">
+          <h2 style="margin-top:0;">Empleados contratados</h2>
+          <p class="muted">Administra el personal del salón: estilistas, barberos, manicuristas y equipo de limpieza.</p>
+          <div id="empMsg"></div>
+          <form class="form" id="empForm" style="max-width:720px;margin-bottom:12px;">
+            <div class="row">
+              <input id="empNombre" placeholder="Nombre" required />
+              <select id="empServicioEspecialidad" required></select>
+              <input id="empEspecialidad" placeholder="Especialidad" readonly />
+              <select id="empDisponible">
+                <option value="1">Disponible</option>
+                <option value="0">No disponible</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" type="submit">Agregar empleado</button>
+          </form>
+          <div style="margin-top:12px;overflow:auto;">
+            <table>
+              <thead><tr><th>Nombre</th><th>Especialidad</th><th>Disponible</th><th>Acciones</th></tr></thead>
+              <tbody id="empleadosTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="agenda" class="card admin-section" style="display:none;">
+          <h2 style="margin-top:0;">Agenda de citas</h2>
+          <p class="muted">Visualiza todas las citas. Haz clic en un evento para ver detalles y reprogramar, cancelar o marcar como terminada.</p>
+          <div id="adminCalendar"></div>
+          <div id="agendaModal" class="modal-overlay" style="display:none;" aria-hidden="true">
+            <div class="modal-card">
+              <h3 style="margin-top:0;">Detalle de la cita</h3>
+              <div id="agendaModalBody"></div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" id="agendaModalReprogramar">Reprogramar</button>
+                <button type="button" class="btn btn-ghost" id="agendaModalTerminar">Marcar como terminada</button>
+                <button type="button" class="btn btn-danger" id="agendaModalCancelar">Cancelar cita</button>
+                <button type="button" class="btn btn-ghost" id="agendaModalCerrar">Cerrar</button>
+              </div>
+              <div id="agendaModalReprogramarForm" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #eee;">
+                <label>Nueva fecha <input type="date" id="repFecha" /></label>
+                <label>Nueva hora <input type="time" id="repHora" /></label>
+                <label>Empleado <select id="repEmpleado"></select></label>
+                <button type="button" class="btn btn-primary" id="repConfirmar">Confirmar reprogramar</button>
+                <button type="button" class="btn btn-ghost" id="repCancelar">Volver</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="citas" class="card admin-section" style="display:none;">
+          <h2 style="margin-top:0;">Citas</h2>
+          <div id="citaMsg"></div>
+          <form class="form" id="citaForm">
+            <div class="row">
+              <select id="citaCliente" required></select>
+              <select id="citaServicio" required></select>
+            </div>
+            <div class="row">
+              <select id="citaEmpleado" required></select>
+              <input id="citaFecha" type="date" required />
+              <input id="citaHora" type="time" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Crear cita</button>
+          </form>
+          <div style="margin-top:12px;overflow:auto;">
+            <table>
+              <thead><tr><th>Fecha</th><th>Hora</th><th>Cliente</th><th>Servicio</th><th>Empleado</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="citasTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="pagos" class="card admin-section" style="display:none;">
+          <h2 style="margin-top:0;">Pagos</h2>
+          <div id="pagoMsg"></div>
+          <form class="form" id="pagoForm" style="max-width:720px;">
+            <div class="row">
+              <select id="pagoCita" required></select>
+              <input id="pagoMonto" type="number" placeholder="Monto" required />
+              <select id="pagoMetodo" required>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Tarjeta">Tarjeta</option>
+                <option value="Transferencia">Transferencia</option>
+              </select>
+              <input id="pagoFecha" type="date" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Registrar pago</button>
+          </form>
+          <div style="margin-top:12px;overflow:auto;">
+            <table>
+              <thead><tr><th>Cita</th><th>Cliente</th><th>Servicio</th><th>Monto sugerido</th><th>Estado</th></tr></thead>
+              <tbody id="pagosPendientesTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="novedades" class="card admin-section" style="display:none;">
+          <h2 style="margin-top:0;">Novedades</h2>
+          <p class="muted">Crea y administra las novedades que ve el cliente.</p>
+          <div id="novMsg"></div>
+          <form class="form" id="novForm" style="max-width:820px;">
+            <div class="row">
+              <input id="novTitulo" placeholder="Título" required />
+              <select id="novTipo">
+                <option value="aviso">Aviso</option>
+                <option value="promocion">Promoción</option>
+                <option value="novedad">Novedad</option>
+                <option value="info">Info</option>
+                <option value="evento">Evento</option>
+              </select>
+              <input id="novFecha" type="date" required />
+              <select id="novActivo">
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+              </select>
+            </div>
+            <textarea id="novContenido" placeholder="Contenido" rows="4" style="width:100%;"></textarea>
+            <button class="btn btn-primary" type="submit">Agregar novedad</button>
+          </form>
+          <div style="margin-top:12px;overflow:auto;">
+            <table>
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Título</th><th>Activo</th><th>Acciones</th></tr></thead>
+              <tbody id="novTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="reportes" class="card admin-section" style="display:none;">
+          <h2 style="margin-top:0;">Reportes</h2>
+          <div class="muted">Genera reportes por rango de fecha (diario, semanal, mensual o anual).</div>
+          <div id="repMsg"></div>
+          <form class="form" id="repForm" style="max-width:520px;">
+            <div class="row">
+              <input id="repFrom" type="date" required />
+              <input id="repTo" type="date" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Generar</button>
+          </form>
+          <div id="repOut" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    const drawer = document.getElementById("drawer");
+    document.getElementById("menuBtn").addEventListener("click", () => {
+      drawer.style.display = (drawer.style.display === "none") ? "block" : "none";
+    });
+    document.addEventListener("click", (e) => {
+      const btn = document.getElementById("menuBtn");
+      if (drawer.style.display !== "none" && !drawer.contains(e.target) && e.target !== btn) {
+        drawer.style.display = "none";
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") drawer.style.display = "none";
+    });
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await logout();
+      window.location = "/pages/login.html";
+    });
+
+    // Tabs: mostrar solo una sección a la vez
+    function showSection(id) {
+      document.querySelectorAll(".admin-section").forEach(sec => {
+        sec.style.display = (sec.id === id) ? "block" : "none";
+      });
+      if (id === "agenda") initAdminCalendar();
+    }
+    drawer.querySelectorAll("a[data-section]").forEach(a => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        showSection(a.dataset.section);
+        drawer.style.display = "none";
+      });
+    });
+    showSection("dashboard");
+
+    function setMsg(id, text, ok = false) {
+      document.getElementById(id).innerHTML = text ? `<div class="${ok ? "notice" : "error"}">${text}</div>` : "";
+    }
+
+    const fmtDate = (yyyyMmDd) => {
+      try {
+        const [y, m, d] = String(yyyyMmDd).slice(0, 10).split("-").map(Number);
+        const dt = new Date(y, (m || 1) - 1, d || 1);
+        return new Intl.DateTimeFormat("es-CO", { year: "numeric", month: "2-digit", day: "2-digit" }).format(dt);
+      } catch { return String(yyyyMmDd || ""); }
+    };
+    const fmtTime = (hhmmss) => String(hhmmss || "").slice(0, 5);
+
+    document.getElementById("empForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      document.getElementById("empMsg").innerHTML = "";
+      try {
+        const payload = {
+          nombre: document.getElementById("empNombre").value.trim(),
+          id_servicio: Number(document.getElementById("empServicioEspecialidad").value),
+          disponible: document.getElementById("empDisponible").value === "1"
+        };
+
+        if (editingEmpleadoId) {
+          await apiFetch("/api/empleados/" + editingEmpleadoId, {
+            method: "PUT",
+            body: JSON.stringify(payload)
+          });
+          document.getElementById("empMsg").innerHTML = "<div class='notice'>Empleado actualizado</div>";
+        } else {
+          await apiFetch("/api/empleados", {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          document.getElementById("empMsg").innerHTML = "<div class='notice'>Empleado agregado</div>";
+        }
+
+        e.target.reset();
+        editingEmpleadoId = null;
+        document.querySelector("#empForm button[type='submit']").textContent = "Agregar empleado";
+        await loadEmpleadosList();
+        refetchAdminCalendar();
+        await loadCitas();
+        await loadPagosPendientes();
+      } catch (err) {
+        document.getElementById("empMsg").innerHTML = `<div class="error">${err.message}</div>`;
+      }
+    });
+
+    let chartServicios, chartEmpleados;
+
+    async function ensureAdmin() {
+      const me = await getMe();
+      if (!me.user) return window.location = "/pages/login.html";
+      if (me.user.rol !== "Administrador") return window.location = "/";
+      document.getElementById("who").textContent = me.user.nombre + " · " + me.user.correo;
+    }
+
+    async function loadDashboard() {
+      const stats = await apiFetch("/api/dashboard/stats");
+      document.getElementById("k_totalCitas").textContent = stats.totalCitas;
+      document.getElementById("k_citasHoy").textContent = stats.citasHoy;
+      document.getElementById("k_ingresos").textContent = "$" + stats.ingresosTotal;
+      document.getElementById("k_empleados").textContent = stats.totalEmpleados;
+
+      const svcLabels = stats.topServicios.map(x => x.nombre);
+      const svcData = stats.topServicios.map(x => x.cantidad);
+      const empLabels = stats.topEmpleados.map(x => x.nombre);
+      const empData = stats.topEmpleados.map(x => x.cantidad);
+
+      chartServicios?.destroy();
+      chartEmpleados?.destroy();
+
+      chartServicios = new Chart(document.getElementById("chartServicios"), {
+        type: "bar",
+        data: { labels: svcLabels, datasets: [{ label: "Citas", data: svcData, backgroundColor: "rgba(0,123,255,0.55)" }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+
+      chartEmpleados = new Chart(document.getElementById("chartEmpleados"), {
+        type: "bar",
+        data: { labels: empLabels, datasets: [{ label: "Citas", data: empData, backgroundColor: "rgba(233,30,99,0.45)" }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+      });
+    }
+
+    let editingServicioId = null;
+    let editingEmpleadoId = null;
+    let editingCitaId = null;
+    let citasCache = [];
+
+    async function loadServicios() {
+      const servicios = await apiFetch("/api/servicios");
+      const tbody = document.getElementById("svcTable");
+      tbody.innerHTML = "";
+      servicios.forEach(s => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${s.nombre}</td>
+          <td>$${s.precio}</td>
+          <td>${Number(s.duracion_min || 0)}–${Number(s.duracion_max || 0)} min</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-ghost" data-edit="${s.id_servicio}">Editar</button>
+            <button class="btn btn-danger" data-del="${s.id_servicio}">Eliminar</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll("[data-del]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try {
+            await apiFetch("/api/servicios/" + btn.dataset.del, { method: "DELETE" });
+            setMsg("svcMsg", "Servicio eliminado", true);
+            await loadServicios();
+            await loadDashboard();
+            refetchAdminCalendar();
+          } catch (e) { setMsg("svcMsg", e.message, false); }
+        });
+      });
+
+      tbody.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.edit;
+          const servicio = servicios.find(x => String(x.id_servicio) === String(id));
+          if (!servicio) return;
+          editingServicioId = id;
+          document.getElementById("svcNombre").value = servicio.nombre;
+          document.getElementById("svcPrecio").value = servicio.precio;
+          document.getElementById("svcDurMin").value = servicio.duracion_min || 60;
+          document.getElementById("svcDurMax").value = servicio.duracion_max || 60;
+          document.querySelector("#svcForm button[type='submit']").textContent = "Guardar cambios";
+        });
+      });
+
+      // llenar select en form citas
+      const sel = document.getElementById("citaServicio");
+      sel.innerHTML = servicios.map(s => `<option value="${s.id_servicio}">${s.nombre} ($${s.precio})</option>`).join("");
+      sel.dispatchEvent(new Event("change"));
+
+      // llenar select de especialidad de empleados (basado en servicios)
+      const selEmp = document.getElementById("empServicioEspecialidad");
+      selEmp.innerHTML = `<option value="">Servicio (especialidad)...</option>` + servicios.map(s => `<option value="${s.id_servicio}">${s.nombre}</option>`).join("");
+      selEmp.addEventListener("change", () => {
+        const opt = selEmp.selectedOptions[0];
+        document.getElementById("empEspecialidad").value = opt ? (opt.textContent || "") : "";
+      });
+    }
+
+    async function loadEmpleadosList() {
+      const empleados = await apiFetch("/api/empleados");
+      const tbody = document.getElementById("empleadosTable");
+      tbody.innerHTML = "";
+      empleados.forEach(e => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${e.nombre}</td>
+                        <td>${e.especialidad}</td>
+                        <td>${e.disponible ? "Sí" : "No"}</td>
+                        <td style="white-space:nowrap;">
+                          <button class="btn btn-ghost" data-edit-emp="${e.id_empleado}">Editar</button>
+                          <button class="btn btn-danger" data-del-emp="${e.id_empleado}">Eliminar</button>
+                        </td>`;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll("[data-del-emp]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try {
+            await apiFetch("/api/empleados/" + btn.dataset.delEmp, { method: "DELETE" });
+            document.getElementById("empMsg").innerHTML = "<div class='notice'>Empleado eliminado</div>";
+            await loadEmpleadosList();
+            refetchAdminCalendar();
+            await loadCitas();
+          } catch (e) {
+            document.getElementById("empMsg").innerHTML = `<div class="error">${e.message}</div>`;
+          }
+        });
+      });
+
+      tbody.querySelectorAll("[data-edit-emp]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.editEmp;
+          const emp = empleados.find(x => String(x.id_empleado) === String(id));
+          if (!emp) return;
+          editingEmpleadoId = id;
+          document.getElementById("empNombre").value = emp.nombre;
+          document.getElementById("empEspecialidad").value = emp.especialidad;
+          // preselección tentativa (si hay un servicio con el mismo nombre)
+          const sel = document.getElementById("empServicioEspecialidad");
+          const match = Array.from(sel.options).find(o => o.textContent === emp.especialidad);
+          sel.value = match ? match.value : "";
+          document.getElementById("empDisponible").value = emp.disponible ? "1" : "0";
+          document.querySelector("#empForm button[type='submit']").textContent = "Guardar cambios";
+        });
+      });
+    }
+
+    async function loadClientesSelect() {
+      const clientes = await apiFetch("/api/clientes");
+      document.getElementById("citaCliente").innerHTML =
+        `<option value="">Cliente...</option>` +
+        clientes.map(c => `<option value="${c.id_cliente}">${c.nombre} (${c.correo})</option>`).join("");
+    }
+
+    async function loadEmpleadosByServicio() {
+      const idServicio = document.getElementById("citaServicio").value;
+      if (!idServicio) return;
+      const empleados = await apiFetch("/api/empleados/por-servicio/" + idServicio);
+      document.getElementById("citaEmpleado").innerHTML =
+        empleados.map(e => `<option value="${e.id_empleado}">${e.nombre} – ${e.especialidad}</option>`).join("");
+    }
+
+    async function loadCitas() {
+      const citas = await apiFetch("/api/citas");
+      citasCache = citas;
+      const tbody = document.getElementById("citasTable");
+      tbody.innerHTML = "";
+      citas.forEach(c => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${fmtDate(c.fecha)}</td>
+          <td>${fmtTime(c.hora)}</td>
+          <td>${c.cliente}</td>
+          <td>${c.servicio}</td>
+          <td>${c.empleado}</td>
+          <td>${c.estado}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-ghost" data-rep="${c.id_cita}">Reprogramar</button>
+            <button class="btn btn-ghost" data-done="${c.id_cita}">Terminar</button>
+            <button class="btn btn-danger" data-can="${c.id_cita}">Cancelar</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+
+      tbody.querySelectorAll("[data-can]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try {
+            await apiFetch("/api/citas/" + btn.dataset.can + "/cancelar", { method: "PUT" });
+            setMsg("citaMsg", "Cita cancelada", true);
+            await loadCitas();
+            await loadDashboard();
+          } catch (e) { setMsg("citaMsg", e.message, false); }
+        });
+      });
+
+      tbody.querySelectorAll("[data-rep]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.rep;
+          const c = citas.find(x => String(x.id_cita) === String(id));
+          if (!c) return;
+          editingCitaId = id;
+          document.getElementById("citaCliente").value = c.id_cliente || "";
+          document.getElementById("citaServicio").value = c.id_servicio || "";
+          document.getElementById("citaServicio").dispatchEvent(new Event("change"));
+          document.getElementById("citaEmpleado").value = c.id_empleado || "";
+          document.getElementById("citaFecha").value = String(c.fecha).slice(0, 10);
+          document.getElementById("citaHora").value = String(c.hora).slice(0, 5);
+          document.querySelector("#citaForm button[type='submit']").textContent = "Reprogramar cita";
+        });
+      });
+
+      tbody.querySelectorAll("[data-done]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try {
+            await apiFetch("/api/citas/" + btn.dataset.done + "/terminar", { method: "PUT" });
+            setMsg("citaMsg", "Cita marcada como terminada", true);
+            await loadCitas();
+            await loadDashboard();
+          } catch (e) { setMsg("citaMsg", e.message, false); }
+        });
+      });
+
+      // select para pagos (solo citas agendadas)
+      const pagoSel = document.getElementById("pagoCita");
+      pagoSel.innerHTML = `<option value="">Cita...</option>` + citas
+        .filter(c => c.estado !== "Cancelada")
+        .map(c => `<option value="${c.id_cita}" data-precio="${c.precio_servicio || 0}">${fmtDate(c.fecha)} ${fmtTime(c.hora)} – ${c.cliente} – ${c.servicio}</option>`)
+        .join("");
+    }
+
+    let adminCalendarInstance = null;
+    let agendaModalEvent = null;
+
+    function initAdminCalendar() {
+      if (adminCalendarInstance) return;
+      const calendarEl = document.getElementById("adminCalendar");
+      if (!calendarEl) return;
+      adminCalendarInstance = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        locale: "es",
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+        },
+        buttonText: {
+          today: "Hoy",
+          month: "Mes",
+          week: "Semana",
+          day: "Día",
+          listWeek: "Lista"
+        },
+        events: function(fetchInfo, successCallback, failureCallback) {
+          const startStr = (fetchInfo && (fetchInfo.startStr || fetchInfo.start)) ? (fetchInfo.startStr || (fetchInfo.start && fetchInfo.start.toISOString && fetchInfo.start.toISOString().slice(0,10))) : "";
+          const endStr = (fetchInfo && (fetchInfo.endStr || fetchInfo.end)) ? (fetchInfo.endStr || (fetchInfo.end && fetchInfo.end.toISOString && fetchInfo.end.toISOString().slice(0,10))) : "";
+          const from = String(startStr).slice(0, 10);
+          const to = String(endStr).slice(0, 10);
+          const url = (from && to) ? "/api/citas?format=fullcalendar&from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to) : "/api/citas?format=fullcalendar";
+          apiFetch(url)
+            .then(events => {
+              const list = Array.isArray(events) ? events : [];
+              const withClass = list.map(ev => {
+                const est = (ev.extendedProps && ev.extendedProps.estado) || "Agendada";
+                const cls = est === "Cancelada" ? "fc-event-cancelada" : est === "Terminada" ? "fc-event-terminada" : "fc-event-agendada";
+                return { ...ev, classNames: [cls] };
+              });
+              successCallback(withClass);
+            })
+            .catch(() => {
+              apiFetch("/api/citas?format=fullcalendar").then(events => {
+                const list = Array.isArray(events) ? events : [];
+                const withClass = list.map(ev => {
+                  const est = (ev.extendedProps && ev.extendedProps.estado) || "Agendada";
+                  const cls = est === "Cancelada" ? "fc-event-cancelada" : est === "Terminada" ? "fc-event-terminada" : "fc-event-agendada";
+                  return { ...ev, classNames: [cls] };
+                });
+                successCallback(withClass);
+              }).catch(failureCallback);
+            });
+        },
+        dateClick: function(arg) {
+          if (arg && (arg.dateStr || arg.date)) this.changeView("timeGridDay", arg.dateStr || (arg.date && arg.date.toISOString && arg.date.toISOString().slice(0,10)));
+        },
+        eventClick: function(arg) {
+          arg.jsEvent.preventDefault();
+          agendaModalEvent = arg.event;
+          const p = arg.event.extendedProps || {};
+          document.getElementById("agendaModalBody").innerHTML = `
+            <p><strong>Cliente:</strong> ${p.cliente || "-"}<br/>
+            <strong>Servicio:</strong> ${p.servicio || "-"}<br/>
+            <strong>Empleado:</strong> ${p.empleado || "-"}<br/>
+            <strong>Fecha:</strong> ${p.fecha || "-"} ${p.hora || ""}<br/>
+            <strong>Estado:</strong> ${p.estado || "-"}</p>`;
+          document.getElementById("agendaModalReprogramarForm").style.display = "none";
+          document.getElementById("agendaModal").style.display = "flex";
+          document.getElementById("agendaModal").setAttribute("aria-hidden", "false");
+        }
+      });
+      adminCalendarInstance.render();
+    }
+
+    function closeAgendaModal() {
+      document.getElementById("agendaModal").style.display = "none";
+      document.getElementById("agendaModal").setAttribute("aria-hidden", "true");
+      agendaModalEvent = null;
+    }
+
+    function refetchAdminCalendar() {
+      if (adminCalendarInstance) adminCalendarInstance.refetchEvents();
+    }
+
+    document.getElementById("agendaModalCerrar").addEventListener("click", closeAgendaModal);
+    document.getElementById("agendaModal").addEventListener("click", function(e) {
+      if (e.target === this) closeAgendaModal();
+    });
+
+    document.getElementById("agendaModalCancelar").addEventListener("click", async () => {
+      if (!agendaModalEvent) return;
+      const id = agendaModalEvent.extendedProps.id_cita;
+      try {
+        await apiFetch("/api/citas/" + id + "/cancelar", { method: "PUT" });
+        refetchAdminCalendar();
+        await loadCitas();
+        await loadDashboard();
+        closeAgendaModal();
+      } catch (e) { setMsg("citaMsg", e.message, false); }
+    });
+
+    document.getElementById("agendaModalTerminar").addEventListener("click", async () => {
+      if (!agendaModalEvent) return;
+      const id = agendaModalEvent.extendedProps.id_cita;
+      try {
+        await apiFetch("/api/citas/" + id + "/terminar", { method: "PUT" });
+        refetchAdminCalendar();
+        await loadCitas();
+        await loadDashboard();
+        closeAgendaModal();
+      } catch (e) { setMsg("citaMsg", e.message, false); }
+    });
+
+    document.getElementById("agendaModalReprogramar").addEventListener("click", () => {
+      if (!agendaModalEvent) return;
+      const p = agendaModalEvent.extendedProps;
+      document.getElementById("repFecha").value = p.fecha || "";
+      document.getElementById("repHora").value = (p.hora || "").slice(0, 5);
+      document.getElementById("agendaModalReprogramarForm").style.display = "block";
+      apiFetch("/api/empleados/por-servicio/" + (p.id_servicio || "")).then(emps => {
+        const sel = document.getElementById("repEmpleado");
+        sel.innerHTML = emps.map(e => `<option value="${e.id_empleado}" ${e.id_empleado === p.id_empleado ? "selected" : ""}>${e.nombre}</option>`).join("");
+      });
+    });
+
+    document.getElementById("repCancelar").addEventListener("click", () => {
+      document.getElementById("agendaModalReprogramarForm").style.display = "none";
+    });
+
+    document.getElementById("repConfirmar").addEventListener("click", async () => {
+      if (!agendaModalEvent) return;
+      const id = agendaModalEvent.extendedProps.id_cita;
+      const fecha = document.getElementById("repFecha").value;
+      const hora = document.getElementById("repHora").value;
+      const id_empleado = Number(document.getElementById("repEmpleado").value);
+      if (!fecha || !hora) return;
+      try {
+        await apiFetch("/api/citas/" + id + "/reprogramar", {
+          method: "PUT",
+          body: JSON.stringify({ fecha, hora, id_empleado })
+        });
+        document.getElementById("agendaModalReprogramarForm").style.display = "none";
+        refetchAdminCalendar();
+        await loadCitas();
+        await loadDashboard();
+        closeAgendaModal();
+      } catch (e) { setMsg("citaMsg", e.message, false); }
+    });
+
+    async function loadPagosPendientes() {
+      const pendientes = await apiFetch("/api/pagos/pendientes");
+      const pagoSel = document.getElementById("pagoCita");
+      pagoSel.innerHTML = `<option value="">Cita pendiente...</option>` + (pendientes || [])
+        .map(p => `<option value="${p.id_cita}" data-precio="${p.monto_sugerido || 0}">${fmtDate(p.fecha_cita)} ${fmtTime(p.hora)} – ${p.cliente} – ${p.servicio}</option>`)
+        .join("");
+
+      const tbody = document.getElementById("pagosPendientesTable");
+      tbody.innerHTML = "";
+      pendientes.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${fmtDate(p.fecha_cita)} ${fmtTime(p.hora)}</td>
+          <td>${p.cliente}</td>
+          <td>${p.servicio}</td>
+          <td>$${Number(p.monto_sugerido || 0).toLocaleString()}</td>
+          <td>${p.estado}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById("svcForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          nombre: document.getElementById("svcNombre").value.trim(),
+          precio: Number(document.getElementById("svcPrecio").value),
+          duracion_min: Number(document.getElementById("svcDurMin").value),
+          duracion_max: Number(document.getElementById("svcDurMax").value)
+        };
+        if (editingServicioId) {
+          await apiFetch("/api/servicios/" + editingServicioId, {
+            method: "PUT",
+            body: JSON.stringify(payload)
+          });
+          setMsg("svcMsg", "Servicio actualizado", true);
+        } else {
+          await apiFetch("/api/servicios", {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          setMsg("svcMsg", "Servicio agregado", true);
+        }
+        e.target.reset();
+        editingServicioId = null;
+        document.querySelector("#svcForm button[type='submit']").textContent = "Agregar servicio";
+        await loadServicios();
+        await loadDashboard();
+        refetchAdminCalendar();
+        await loadPagosPendientes();
+      } catch (err) { setMsg("svcMsg", err.message, false); }
+    });
+
+    document.getElementById("citaServicio").addEventListener("change", loadEmpleadosByServicio);
+
+    document.getElementById("citaForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          id_cliente: Number(document.getElementById("citaCliente").value),
+          id_servicio: Number(document.getElementById("citaServicio").value),
+          id_empleado: Number(document.getElementById("citaEmpleado").value),
+          fecha: document.getElementById("citaFecha").value,
+          hora: document.getElementById("citaHora").value
+        };
+        if (editingCitaId) {
+          await apiFetch("/api/citas/" + editingCitaId + "/reprogramar", {
+            method: "PUT",
+            body: JSON.stringify({
+              fecha: payload.fecha,
+              hora: payload.hora,
+              id_empleado: payload.id_empleado
+            })
+          });
+          setMsg("citaMsg", "Cita reprogramada", true);
+        } else {
+          await apiFetch("/api/citas", {
+            method: "POST",
+            body: JSON.stringify(payload)
+          });
+          setMsg("citaMsg", "Cita creada", true);
+        }
+        await loadCitas();
+        await loadDashboard();
+        refetchAdminCalendar();
+        editingCitaId = null;
+        document.querySelector("#citaForm button[type='submit']").textContent = "Crear cita";
+      } catch (err) { setMsg("citaMsg", err.message, false); }
+    });
+
+    document.getElementById("pagoForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await apiFetch("/api/pagos", {
+          method: "POST",
+          body: JSON.stringify({
+            id_cita: Number(document.getElementById("pagoCita").value),
+            monto: Number(document.getElementById("pagoMonto").value),
+            metodo_pago: document.getElementById("pagoMetodo").value,
+            fecha_pago: document.getElementById("pagoFecha").value
+          })
+        });
+        setMsg("pagoMsg", "Pago registrado", true);
+        await loadPagosPendientes();
+        await loadDashboard();
+        refetchAdminCalendar();
+        document.getElementById("pagoMonto").value = "";
+      } catch (err) { setMsg("pagoMsg", err.message, false); }
+    });
+
+    document.getElementById("pagoCita").addEventListener("change", (e) => {
+      const opt = e.target.selectedOptions[0];
+      if (!opt) return;
+      const precio = Number(opt.getAttribute("data-precio") || "0");
+      const montoInput = document.getElementById("pagoMonto");
+      if (!montoInput.value) {
+        montoInput.value = precio || "";
+      }
+    });
+
+    document.getElementById("repForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setMsg("repMsg", "", true);
+      const from = document.getElementById("repFrom").value;
+      const to = document.getElementById("repTo").value;
+      try {
+        const rep = await apiFetch("/api/reportes/detallados?from=" + from + "&to=" + to);
+
+        const renderTable = (title, rows) => {
+          const keys = rows && rows[0] ? Object.keys(rows[0]) : [];
+          const head = keys.map(k => `<th>${k}</th>`).join("");
+          const body = (rows || []).map(r => `<tr>${keys.map(k => `<td>${r[k]}</td>`).join("")}</tr>`).join("");
+          return `
+            <div class="card" style="overflow:auto;">
+              <h3 style="margin-top:0;">${title}</h3>
+              ${keys.length === 0 ? "<div class='muted'>Sin datos.</div>" : `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`}
+            </div>
+          `;
+        };
+
+        document.getElementById("repOut").innerHTML = `
+          <div class="notice">
+            <strong>Rango:</strong> ${fmtDate(rep.from)} a ${fmtDate(rep.to)}<br/>
+            <strong>Total citas:</strong> ${rep.kpis.totalCitas} ·
+            <strong>Terminadas:</strong> ${rep.kpis.citasTerminadas} ·
+            <strong>Canceladas:</strong> ${rep.kpis.citasCanceladas} ·
+            <strong>Reprogramadas:</strong> ${rep.kpis.citasReprogramadas}<br/>
+            <strong>Pendientes de pago:</strong> ${rep.kpis.citasPendientesPago} ·
+            <strong>Ingresos:</strong> $${Number(rep.kpis.ingresosTotal || 0).toLocaleString()}
+          </div>
+          <div class="grid grid-3" style="margin-top:12px;">
+            ${renderTable("Citas por estado", rep.tablas.citasPorEstado)}
+            ${renderTable("Citas por servicio", rep.tablas.citasPorServicio)}
+            ${renderTable("Citas por día", rep.tablas.citasPorDia)}
+          </div>
+          <div class="grid grid-3" style="margin-top:12px;">
+            ${renderTable("Ingresos por método", rep.tablas.ingresosPorMetodo)}
+            ${renderTable("Ingresos por servicio", rep.tablas.ingresosPorServicio)}
+            ${renderTable("Pendientes de pago por servicio", rep.tablas.pendientesPagoPorServicio)}
+          </div>
+          <div class="grid grid-3" style="margin-top:12px;">
+            ${renderTable("Empleados (citas por estado)", rep.tablas.topEmpleadosPorCitas)}
+            ${renderTable("Top clientes por citas", rep.tablas.topClientesPorCitas)}
+            ${renderTable("Detalle de citas (incluye estado)", rep.tablas.detalleCitas)}
+          </div>
+        `;
+      } catch (err) {
+        setMsg("repMsg", err.message, false);
+      }
+    });
+
+    let editingNovedadId = null;
+    async function loadNovedadesAdmin() {
+      const list = await apiFetch("/api/novedades");
+      const tbody = document.getElementById("novTable");
+      tbody.innerHTML = "";
+      (list || []).forEach(n => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${fmtDate(n.fecha_publicacion)}</td>
+          <td>${n.tipo || ""}</td>
+          <td>${n.titulo}</td>
+          <td>${n.activo ? "Sí" : "No"}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-ghost" data-nov-edit="${n.id_novedad}">Editar</button>
+            <button class="btn btn-danger" data-nov-del="${n.id_novedad}">Eliminar</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      tbody.querySelectorAll("[data-nov-del]").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          try {
+            await apiFetch("/api/novedades/" + btn.dataset.novDel, { method: "DELETE" });
+            setMsg("novMsg", "Novedad eliminada", true);
+            await loadNovedadesAdmin();
+          } catch (e) { setMsg("novMsg", e.message, false); }
+        });
+      });
+      tbody.querySelectorAll("[data-nov-edit]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const n = (list || []).find(x => String(x.id_novedad) === String(btn.dataset.novEdit));
+          if (!n) return;
+          editingNovedadId = n.id_novedad;
+          document.getElementById("novTitulo").value = n.titulo || "";
+          document.getElementById("novTipo").value = n.tipo || "aviso";
+          document.getElementById("novFecha").value = String(n.fecha_publicacion).slice(0, 10);
+          document.getElementById("novActivo").value = n.activo ? "1" : "0";
+          document.getElementById("novContenido").value = n.contenido || "";
+          document.querySelector("#novForm button[type='submit']").textContent = "Guardar cambios";
+        });
+      });
+    }
+
+    document.getElementById("novForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const payload = {
+          titulo: document.getElementById("novTitulo").value.trim(),
+          tipo: document.getElementById("novTipo").value,
+          fecha_publicacion: document.getElementById("novFecha").value,
+          activo: document.getElementById("novActivo").value === "1",
+          contenido: document.getElementById("novContenido").value
+        };
+        if (editingNovedadId) {
+          await apiFetch("/api/novedades/" + editingNovedadId, { method: "PUT", body: JSON.stringify(payload) });
+          setMsg("novMsg", "Novedad actualizada", true);
+        } else {
+          await apiFetch("/api/novedades", { method: "POST", body: JSON.stringify(payload) });
+          setMsg("novMsg", "Novedad agregada", true);
+        }
+        e.target.reset();
+        editingNovedadId = null;
+        document.querySelector("#novForm button[type='submit']").textContent = "Agregar novedad";
+        await loadNovedadesAdmin();
+      } catch (err) { setMsg("novMsg", err.message, false); }
+    });
+
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible") {
+        refetchAdminCalendar();
+        loadCitas().catch(() => {});
+        loadDashboard().catch(() => {});
+        loadPagosPendientes().catch(() => {});
+      }
+    });
+
+    (async () => {
+      await ensureAdmin();
+      await loadDashboard();
+      await loadServicios();
+      await loadEmpleadosList();
+      await loadClientesSelect();
+      await loadEmpleadosByServicio();
+      await loadCitas();
+      const hoy = new Date();
+      // No permitir fechas pasadas en UI (admin)
+      const citaFecha = document.getElementById("citaFecha");
+      if (citaFecha) citaFecha.min = hoy.toISOString().slice(0, 10);
+      const pagoFecha = document.getElementById("pagoFecha");
+      if (pagoFecha) pagoFecha.valueAsDate = hoy;
+      await loadPagosPendientes();
+      const novFecha = document.getElementById("novFecha");
+      if (novFecha) novFecha.valueAsDate = hoy;
+      // Prellenar rango de reportes (últimos 30 días) para que "Generar" funcione de inmediato
+      const repTo = document.getElementById("repTo");
+      const repFrom = document.getElementById("repFrom");
+      if (repTo && repFrom) {
+        const to = new Date();
+        const from = new Date();
+        from.setDate(from.getDate() - 30);
+        repTo.valueAsDate = to;
+        repFrom.valueAsDate = from;
+      }
+      await loadNovedadesAdmin();
+    })();
+  </script>
+</body>
+</html>

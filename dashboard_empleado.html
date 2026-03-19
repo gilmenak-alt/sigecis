@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Panel Empleado</title>
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/script.js"></script>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+  }
+
+  .dashboard {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .dashboard-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  .dashboard-top h1 {
+    margin: 0;
+  }
+
+  .logout-btn {
+    padding: 8px 14px;
+    border-radius: 18px;
+    border: none;
+    background-color: #dc3545;
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .logout-btn:hover {
+    background-color: #b52a36;
+  }
+
+  .dashboard-header {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-header-text {
+    flex: 1;
+  }
+
+  .panel-img {
+    max-width: 260px;
+    border-radius: 12px;
+  }
+
+  .dashboard-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1.2fr;
+    gap: 18px;
+  }
+
+  .dashboard-cards,
+  .dashboard-lists {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .dashboard-card,
+  .list-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .dashboard-card h3,
+  .list-card h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+
+  .dashboard-card a {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 8px 14px;
+    border-radius: 18px;
+    text-decoration: none;
+    background-color: #007bff;
+    color: #ffffff;
+    font-weight: bold;
+  }
+
+  .dashboard-card a:hover {
+    background-color: #0056b3;
+  }
+
+  details summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: #007bff;
+    list-style: none;
+  }
+
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .list-simple {
+    margin: 8px 0 0 0;
+    padding-left: 16px;
+    font-size: 14px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="dashboard">
+  <div class="dashboard-top">
+    <h1>Panel del Empleado</h1>
+    <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+  </div>
+
+  <div class="dashboard-header">
+    <div class="dashboard-header-text">
+      <p>
+      En este panel podrás consultar las citas que tienes asignadas,
+      organizar tu agenda de trabajo, ver los servicios que realizas
+      y actualizar tus datos básicos.
+      </p>
+    </div>
+    <img src="img/servicios.png" class="panel-img" alt="Servicios del salón">
+  </div>
+
+  <div class="dashboard-layout">
+    <div class="dashboard-cards">
+      <div class="dashboard-card">
+        <h3>Mis citas</h3>
+        <p>Consulta las citas que tienes programadas y mantén organizada tu jornada.</p>
+        <a href="empleado/mis_citas.html">Ver citas</a>
+      </div>
+
+      <div class="dashboard-card">
+        <h3>Mis datos y servicios</h3>
+        <p>Actualiza tus datos personales y los servicios que ofreces.</p>
+        <a href="empleado/perfil.html">Gestionar mi perfil</a>
+      </div>
+    </div>
+
+    <div class="dashboard-lists">
+      <div class="list-card">
+        <h3>Servicios del salón</h3>
+        <p>Lista de servicios para que sepas qué ofrece el sistema.</p>
+        <details>
+          <summary>Ver servicios</summary>
+          <ul id="lista-servicios-empleado" class="list-simple"></ul>
+        </details>
+      </div>
+
+      <div class="list-card">
+        <h3>Equipo de trabajo</h3>
+        <p>Empleados registrados y sus especialidades.</p>
+        <details>
+          <summary>Ver empleados</summary>
+          <ul id="lista-empleados-empleado" class="list-simple"></ul>
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function logout() {
+  window.location = "login.html";
+}
+
+function cargarPanelEmpleado() {
+  const servicios = obtenerServicios();
+  const empleados = obtenerEmpleados();
+
+  const ulServicios = document.getElementById("lista-servicios-empleado");
+  const ulEmpleados = document.getElementById("lista-empleados-empleado");
+
+  if (ulServicios) {
+    ulServicios.innerHTML = "";
+    servicios.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = s.nombre + " - $" + s.precio;
+      ulServicios.appendChild(li);
+    });
+  }
+
+  if (ulEmpleados) {
+    ulEmpleados.innerHTML = "";
+    empleados.forEach(e => {
+      const li = document.createElement("li");
+      li.textContent = e.nombre + " (" + e.especialidad + ")";
+      ulEmpleados.appendChild(li);
+    });
+  }
+}
+
+document.addEventListener("DOMContentLoaded", cargarPanelEmpleado);
+</script>
+
+</body>
+
+</html>

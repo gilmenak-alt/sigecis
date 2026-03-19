@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIGECIS – Cliente</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+  <style>
+    .service-card { background: var(--parchment); border-radius:14px; overflow:hidden; border: 1px solid var(--dust-grey); display:flex; flex-direction:column; min-width:0; }
+    .service-card .servicio-img-wrap { width:100%; height:140px; background: var(--linen); overflow:hidden; }
+    .service-card .servicio-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+    .service-card .servicio-card-body { padding:14px; flex:1; display:flex; flex-direction:column; }
+    .service-card h4 { margin:0 0 6px 0; color: #444; font-size:1rem; }
+    .service-card .price { font-weight:bold; color:#333; margin-bottom:8px; }
+    .service-card .desc { font-size:12px; color:#555; line-height:1.4; flex:1; margin-bottom:10px; }
+    .novedad-card { background: var(--parchment); border: 1px solid var(--dust-grey); border-radius:12px; padding:14px; margin-bottom:10px; }
+    .novedad-card .tipo { font-size:12px; color:#666; text-transform:uppercase; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="menu-btn" id="menuBtn" title="Menú">☰</button>
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Panel Cliente</h1>
+            <span id="who"></span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-danger" id="logoutBtn">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="sidebar-layout">
+      <div class="drawer" id="drawer" style="display:none;">
+        <small>Opciones</small>
+        <a href="#" data-section="inicio">Inicio</a>
+        <a href="#" data-section="agendar">Agendar cita</a>
+        <a href="#" data-section="misCitas">Mis citas</a>
+        <a href="#" data-section="misDatos">Mis datos</a>
+        <a href="#" data-section="novedades">Novedades</a>
+        <a href="#" data-section="servicios">Servicios</a>
+      </div>
+
+      <div class="grid" style="gap:16px;">
+        <div id="inicio" class="card cli-panel">
+          <h2 style="margin-top:0;">Bienvenido</h2>
+          <p class="muted" id="cliWelcomeText">Accede a agendar citas, ver tus reservas, datos personales, novedades del salón y el catálogo de servicios.</p>
+          <div class="row" style="flex-wrap:wrap; gap:12px; margin-top:16px;">
+            <a href="#" data-section="agendar" class="btn btn-primary">Agendar cita</a>
+            <a href="#" data-section="misCitas" class="btn btn-ghost">Mis citas</a>
+            <a href="#" data-section="misDatos" class="btn btn-ghost">Mis datos</a>
+            <a href="#" data-section="novedades" class="btn btn-ghost">Novedades</a>
+            <a href="#" data-section="servicios" class="btn btn-ghost">Servicios</a>
+          </div>
+        </div>
+
+        <div id="agendar" class="card cli-panel" style="display:none;">
+          <h2 style="margin-top:0;">Agendar cita</h2>
+          <div id="citaMsg"></div>
+          <form class="form" id="citaForm">
+            <div class="row">
+              <select id="citaServicio" required></select>
+              <select id="citaEmpleado" required></select>
+            </div>
+            <div class="row">
+              <input id="citaFecha" type="date" required />
+              <input id="citaHora" type="time" required />
+            </div>
+            <button class="btn btn-primary" type="submit">Confirmar cita</button>
+          </form>
+          <div class="muted" style="margin-top:10px;">
+            Puedes reprogramar o cancelar tus citas desde "Mis citas", con al menos 24 h de anticipación.
+          </div>
+        </div>
+
+        <div id="misCitas" class="card cli-panel" style="display:none;">
+          <h2 style="margin-top:0;">Mis citas</h2>
+          <p class="muted">Solo puedes reprogramar o cancelar con al menos 24 horas de anticipación. Haz clic en un día para ver ese día.</p>
+          <div id="clienteCalendar"></div>
+          <div id="clienteModal" class="modal-overlay" style="display:none;" aria-hidden="true">
+            <div class="modal-card">
+              <h3 style="margin-top:0;">Detalle de la cita</h3>
+              <div id="clienteModalBody"></div>
+              <div id="clienteModalAviso" class="muted" style="margin-top:8px;"></div>
+              <div class="modal-actions">
+                <button type="button" class="btn btn-ghost" id="cliModalReprogramar">Reprogramar</button>
+                <button type="button" class="btn btn-danger" id="cliModalCancelar">Cancelar cita</button>
+                <button type="button" class="btn btn-ghost" id="cliModalCerrar">Cerrar</button>
+              </div>
+              <div id="clienteModalReprogramarForm" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid #eee;">
+                <label>Nueva fecha <input type="date" id="cliRepFecha" /></label>
+                <label>Nueva hora <input type="time" id="cliRepHora" /></label>
+                <label>Empleado <select id="cliRepEmpleado"></select></label>
+                <button type="button" class="btn btn-primary" id="cliRepConfirmar">Confirmar reprogramar</button>
+                <button type="button" class="btn btn-ghost" id="cliRepCancelar">Volver</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="misDatos" class="card cli-panel" style="display:none;">
+          <h2 style="margin-top:0;">Mis datos</h2>
+          <div id="cliDatosMsg" class="muted" style="margin-bottom:10px;"></div>
+          <form class="form" id="cliDatosForm" style="max-width:480px;">
+            <div class="row">
+              <input id="cliNombre" placeholder="Nombre" required />
+              <input id="cliTelefono" placeholder="Teléfono" type="tel" />
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar datos</button>
+          </form>
+        </div>
+
+        <div id="novedades" class="card cli-panel" style="display:none;">
+          <h2 style="margin-top:0;">Novedades del salón</h2>
+          <p class="muted">Cambios, descuentos y avisos.</p>
+          <div id="novedadesList">Cargando...</div>
+        </div>
+
+        <div id="servicios" class="card cli-panel" style="display:none;">
+          <h2 style="margin-top:0;">Servicios</h2>
+          <p class="muted">Elige un servicio y agenda tu cita.</p>
+          <div id="serviciosCards" class="grid grid-3" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/servicios-data.js"></script>
+  <script>
+    const drawer = document.getElementById("drawer");
+    document.getElementById("menuBtn").addEventListener("click", () => {
+      drawer.style.display = (drawer.style.display === "none") ? "block" : "none";
+    });
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      await logout();
+      window.location = "/pages/login.html";
+    });
+
+    function setMsg(text, ok = false) {
+      document.getElementById("citaMsg").innerHTML = text ? `<div class="${ok ? "notice" : "error"}">${text}</div>` : "";
+    }
+
+    async function ensureCliente() {
+      const me = await getMe();
+      if (!me.user) return window.location = "/pages/login.html";
+      if (me.user.rol !== "Cliente") return window.location = "/";
+      document.getElementById("who").textContent = me.user.nombre + " · " + me.user.correo;
+    }
+
+    function showCliSection(sectionId) {
+      document.querySelectorAll(".cli-panel").forEach(el => {
+        el.style.display = el.id === sectionId ? "block" : "none";
+      });
+      if (sectionId === "misCitas") initClienteCalendar();
+      if (sectionId === "misDatos") loadCliDatos();
+      if (sectionId === "novedades") loadNovedades();
+      if (sectionId === "servicios") renderServiciosCards();
+      if (drawer.style.display !== "none") drawer.style.display = "none";
+    }
+
+    document.querySelectorAll("#drawer a[data-section], #inicio a[data-section]").forEach(a => {
+      a.addEventListener("click", function(e) {
+        e.preventDefault();
+        showCliSection(a.getAttribute("data-section"));
+      });
+    });
+
+    (function setCliWelcome() {
+      getMe().then(me => {
+        const el = document.getElementById("cliWelcomeText");
+        if (el && me.user) el.textContent = "Hola, " + (me.user.nombre || "cliente") + ". Aquí puedes agendar citas, ver tus reservas, actualizar tus datos, consultar novedades y ver los servicios.";
+      });
+    })();
+
+    let serviciosCache = [];
+    async function loadServiciosAndSelects() {
+      serviciosCache = await apiFetch("/api/servicios");
+      const sel = document.getElementById("citaServicio");
+      sel.innerHTML = (serviciosCache || []).map(s => `<option value="${s.id_servicio}">${s.nombre} ($${s.precio})</option>`).join("");
+      sel.dispatchEvent(new Event("change"));
+    }
+
+    function renderServiciosCards() {
+      const cont = document.getElementById("serviciosCards");
+      if (!cont) return;
+      if (serviciosCache.length === 0) {
+        apiFetch("/api/servicios").then(svc => {
+          serviciosCache = svc || [];
+          renderServiciosCards();
+        });
+        return;
+      }
+      cont.innerHTML = serviciosCache.map(s => {
+        const desc = typeof getDescripcionServicio === "function" ? getDescripcionServicio(s.nombre) : "";
+        const imgUrl = typeof getImageUrlServicio === "function" ? getImageUrlServicio(s.nombre) : "";
+        return `
+        <div class="service-card card">
+          <div class="servicio-img-wrap">
+            <img src="${imgUrl}" alt="${(s.nombre||"").replace(/"/g, "&quot;")}" onerror="this.onerror=null;this.src='/img/placeholder.svg';">
+          </div>
+          <div class="servicio-card-body">
+            <h4>${s.nombre}</h4>
+            <p class="price">$${Number(s.precio).toLocaleString()}</p>
+            ${desc ? `<p class="desc">${desc}</p>` : ""}
+            <button type="button" class="btn btn-primary" data-section="agendar" data-servicio="${s.id_servicio}">Agendar</button>
+          </div>
+        </div>
+      `}).join("");
+      cont.querySelectorAll("[data-section=agendar]").forEach(btn => {
+        btn.addEventListener("click", function() {
+          document.getElementById("citaServicio").value = btn.getAttribute("data-servicio");
+          document.getElementById("citaServicio").dispatchEvent(new Event("change"));
+          showCliSection("agendar");
+        });
+      });
+    }
+
+    async function loadCliDatos() {
+      try {
+        const perfil = await apiFetch("/api/clientes/me");
+        document.getElementById("cliNombre").value = perfil.nombre || "";
+        document.getElementById("cliTelefono").value = perfil.telefono || "";
+      } catch (e) {
+        document.getElementById("cliDatosMsg").textContent = "No se pudo cargar el perfil.";
+      }
+    }
+
+    document.getElementById("cliDatosForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msgEl = document.getElementById("cliDatosMsg");
+      try {
+        await apiFetch("/api/clientes/me", {
+          method: "PUT",
+          body: JSON.stringify({
+            nombre: document.getElementById("cliNombre").value.trim(),
+            telefono: document.getElementById("cliTelefono").value.trim() || null
+          })
+        });
+        msgEl.textContent = "Datos guardados.";
+        msgEl.className = "notice";
+      } catch (err) {
+        msgEl.textContent = err.message || "Error al guardar.";
+        msgEl.className = "error";
+      }
+    });
+
+    async function loadNovedades() {
+      const el = document.getElementById("novedadesList");
+      let html = "";
+      try {
+        const list = await apiFetch("/api/novedades");
+        if (list && list.length > 0) {
+          html += list.map(n => `
+            <div class="novedad-card">
+              <span class="tipo">${n.tipo || "aviso"}</span>
+              <h4 style="margin:6px 0;">${n.titulo}</h4>
+              <p style="margin:0;">${(n.contenido || "").replace(/\n/g, "<br/>")}</p>
+              <small class="muted">${n.fecha_publicacion}</small>
+            </div>
+          `).join("");
+        }
+      } catch (e) {
+        // Si falla la API, simplemente seguimos con las novedades fijas
+      }
+      // Novedades fijas para cliente (tarjetas informativas)
+      html += `
+          <div class="novedad-card">
+            <span class="tipo">Novedad</span>
+            <h4 style="margin:6px 0;">✨ Nueva temporada, nuevo look</h4>
+            <p>¿Listo para un cambio? Descubre nuestros servicios de corte, coloración y peinados profesionales para renovar tu estilo y lucir espectacular. ¡Agenda tu cita hoy mismo!</p>
+          </div>
+          <div class="novedad-card">
+            <span class="tipo">Promoción</span>
+            <h4 style="margin:6px 0;">💅 Promoción en Manicura y Pedicura</h4>
+            <p>Dale a tus manos y pies el cuidado que merecen. Esta semana disfruta de nuestros servicios de manicura y pedicura con atención profesional. Reserva tu espacio y luce uñas perfectas.</p>
+          </div>
+          <div class="novedad-card">
+            <span class="tipo">Novedad</span>
+            <h4 style="margin:6px 0;">👁 Resalta tu mirada</h4>
+            <p>Realza tu belleza natural con extensión de pestañas y diseño de cejas. Un pequeño detalle que hace una gran diferencia en tu estilo. ¡Agenda tu cita y transforma tu mirada!</p>
+          </div>
+          <div class="novedad-card">
+            <span class="tipo">Cuidado</span>
+            <h4 style="margin:6px 0;">💇‍♀️ Cuida tu cabello</h4>
+            <p>Devuélvele la vida a tu cabello con nuestros tratamientos capilares hidratantes y reparadores. Ideal para cabello seco, maltratado o sin brillo.</p>
+          </div>
+          <div class="novedad-card">
+            <span class="tipo">Eventos</span>
+            <h4 style="margin:6px 0;">🎉 Maquillaje para eventos especiales</h4>
+            <p>¿Tienes una fiesta, reunión o evento importante? Nuestro maquillaje profesional está diseñado para que luzcas espectacular en cualquier ocasión.</p>
+          </div>
+          <div class="novedad-card">
+            <span class="tipo">Estilo</span>
+            <h4 style="margin:6px 0;">🧔 Estilo masculino</h4>
+            <p>Mantén tu look impecable con nuestros servicios de corte de cabello, corte de barba y afeitado profesional. Un estilo limpio y moderno en cada visita.</p>
+          </div>
+          <div class="novedad-card">
+            <span class="tipo">Info</span>
+            <h4 style="margin:6px 0;">🔔 Agenda fácil y rápida</h4>
+            <p>Recuerda que ahora puedes agendar tus citas directamente desde nuestra plataforma en pocos segundos. Elige el servicio, la fecha y la hora que prefieras.</p>
+          </div>
+        `;
+      el.innerHTML = html;
+    }
+
+    async function loadEmpleadosByServicio() {
+      const idServicio = document.getElementById("citaServicio").value;
+      const empleados = await apiFetch("/api/empleados/por-servicio/" + idServicio);
+      const sel = document.getElementById("citaEmpleado");
+      sel.innerHTML = empleados.map(e => `<option value="${e.id_empleado}">${e.nombre} – ${e.especialidad}</option>`).join("");
+    }
+
+    let clienteCalendarInstance = null;
+    let clienteModalEvent = null;
+
+    function puedeModificarCliente(fechaStr, horaStr) {
+      if (!fechaStr || !horaStr) return false;
+      const h = String(horaStr).replace(/(\d{1,2}:\d{2})(:\d{2})?/, "$1");
+      const dt = new Date(fechaStr + "T" + (h.length === 5 ? h + ":00" : h));
+      return dt.getTime() - Date.now() >= 24 * 60 * 60 * 1000;
+    }
+
+    function initClienteCalendar() {
+      if (clienteCalendarInstance) return;
+      const calendarEl = document.getElementById("clienteCalendar");
+      if (!calendarEl) return;
+      clienteCalendarInstance = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        locale: "es",
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+        },
+        buttonText: { today: "Hoy", month: "Mes", week: "Semana", day: "Día", listWeek: "Lista" },
+        events: function(fetchInfo, successCallback, failureCallback) {
+          const startStr = (fetchInfo && fetchInfo.startStr) ? fetchInfo.startStr : (fetchInfo && fetchInfo.start && fetchInfo.start.toISOString) ? fetchInfo.start.toISOString() : "";
+          const endStr = (fetchInfo && fetchInfo.endStr) ? fetchInfo.endStr : (fetchInfo && fetchInfo.end && fetchInfo.end.toISOString) ? fetchInfo.end.toISOString() : "";
+          const from = String(startStr).slice(0, 10);
+          const to = String(endStr).slice(0, 10);
+          const url = (from && to) ? "/api/citas?format=fullcalendar&from=" + encodeURIComponent(from) + "&to=" + encodeURIComponent(to) : "/api/citas?format=fullcalendar";
+          apiFetch(url)
+            .then(events => {
+              const list = Array.isArray(events) ? events : [];
+              const withClass = list.map(ev => {
+                const est = (ev.extendedProps && ev.extendedProps.estado) || "Agendada";
+                const cls = est === "Cancelada" ? "fc-event-cancelada" : est === "Terminada" ? "fc-event-terminada" : "fc-event-agendada";
+                return { ...ev, classNames: [cls] };
+              });
+              successCallback(withClass);
+            })
+            .catch(() => {
+              apiFetch("/api/citas?format=fullcalendar").then(events => {
+                const list = Array.isArray(events) ? events : [];
+                const withClass = list.map(ev => {
+                  const est = (ev.extendedProps && ev.extendedProps.estado) || "Agendada";
+                  const cls = est === "Cancelada" ? "fc-event-cancelada" : est === "Terminada" ? "fc-event-terminada" : "fc-event-agendada";
+                  return { ...ev, classNames: [cls] };
+                });
+                successCallback(withClass);
+              }).catch(failureCallback);
+            });
+        },
+        dateClick: function(arg) {
+          if (arg && (arg.dateStr || arg.date)) this.changeView("timeGridDay", arg.dateStr || (arg.date && arg.date.toISOString && arg.date.toISOString().slice(0,10)));
+        },
+        eventClick: function(arg) {
+          arg.jsEvent.preventDefault();
+          clienteModalEvent = arg.event;
+          const p = arg.event.extendedProps || {};
+          const puede = (p.estado === "Agendada" || p.estado === "Reprogramada") && puedeModificarCliente(p.fecha, p.hora);
+          document.getElementById("clienteModalBody").innerHTML = `
+            <p><strong>Servicio:</strong> ${p.servicio || "-"}<br/>
+            <strong>Empleado:</strong> ${p.empleado || "-"}<br/>
+            <strong>Fecha:</strong> ${p.fecha || "-"} ${p.hora || ""}<br/>
+            <strong>Estado:</strong> ${p.estado || "-"}</p>`;
+          document.getElementById("clienteModalAviso").textContent = puede
+            ? ""
+            : (p.estado !== "Agendada" && p.estado !== "Reprogramada" ? "Esta cita ya no se puede modificar." : "Solo puedes reprogramar o cancelar con al menos 24 horas de anticipación.");
+          document.getElementById("cliModalReprogramar").style.display = puede ? "" : "none";
+          document.getElementById("cliModalCancelar").style.display = puede ? "" : "none";
+          document.getElementById("clienteModalReprogramarForm").style.display = "none";
+          document.getElementById("clienteModal").style.display = "flex";
+          document.getElementById("clienteModal").setAttribute("aria-hidden", "false");
+        }
+      });
+      clienteCalendarInstance.render();
+    }
+
+    function closeClienteModal() {
+      document.getElementById("clienteModal").style.display = "none";
+      document.getElementById("clienteModal").setAttribute("aria-hidden", "true");
+      clienteModalEvent = null;
+    }
+
+    document.getElementById("cliModalCerrar").addEventListener("click", closeClienteModal);
+    document.getElementById("clienteModal").addEventListener("click", function(e) {
+      if (e.target === this) closeClienteModal();
+    });
+
+    document.getElementById("cliModalCancelar").addEventListener("click", async () => {
+      if (!clienteModalEvent) return;
+      try {
+        await apiFetch("/api/citas/" + clienteModalEvent.extendedProps.id_cita + "/cancelar", { method: "PUT" });
+        clienteCalendarInstance.refetchEvents();
+        closeClienteModal();
+      } catch (e) { setMsg(e.message, false); }
+    });
+
+    document.getElementById("cliModalReprogramar").addEventListener("click", () => {
+      if (!clienteModalEvent) return;
+      const p = clienteModalEvent.extendedProps;
+      document.getElementById("cliRepFecha").value = p.fecha || "";
+      document.getElementById("cliRepHora").value = (p.hora || "").slice(0, 5);
+      document.getElementById("clienteModalReprogramarForm").style.display = "block";
+      apiFetch("/api/empleados/por-servicio/" + (p.id_servicio || "")).then(emps => {
+        const sel = document.getElementById("cliRepEmpleado");
+        sel.innerHTML = emps.map(e => `<option value="${e.id_empleado}" ${e.id_empleado === p.id_empleado ? "selected" : ""}>${e.nombre}</option>`).join("");
+      });
+    });
+
+    document.getElementById("cliRepCancelar").addEventListener("click", () => {
+      document.getElementById("clienteModalReprogramarForm").style.display = "none";
+    });
+
+    document.getElementById("cliRepConfirmar").addEventListener("click", async () => {
+      if (!clienteModalEvent) return;
+      const id = clienteModalEvent.extendedProps.id_cita;
+      const fecha = document.getElementById("cliRepFecha").value;
+      const hora = document.getElementById("cliRepHora").value;
+      const id_empleado = Number(document.getElementById("cliRepEmpleado").value);
+      if (!fecha || !hora) return;
+      try {
+        await apiFetch("/api/citas/" + id + "/reprogramar", {
+          method: "PUT",
+          body: JSON.stringify({ fecha, hora, id_empleado })
+        });
+        document.getElementById("clienteModalReprogramarForm").style.display = "none";
+        clienteCalendarInstance.refetchEvents();
+        closeClienteModal();
+      } catch (e) { setMsg(e.message, false); }
+    });
+
+    document.getElementById("citaServicio").addEventListener("change", loadEmpleadosByServicio);
+
+    document.getElementById("citaForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setMsg("");
+      try {
+        await apiFetch("/api/citas", {
+          method: "POST",
+          body: JSON.stringify({
+            id_servicio: Number(document.getElementById("citaServicio").value),
+            id_empleado: Number(document.getElementById("citaEmpleado").value),
+            fecha: document.getElementById("citaFecha").value,
+            hora: document.getElementById("citaHora").value
+          })
+        });
+        setMsg("Cita agendada correctamente.", true);
+        if (clienteCalendarInstance) clienteCalendarInstance.refetchEvents();
+      } catch (err) {
+        setMsg(err.message, false);
+      }
+    });
+
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible" && clienteCalendarInstance) clienteCalendarInstance.refetchEvents();
+    });
+
+    (async () => {
+      await ensureCliente();
+      await loadServiciosAndSelects();
+      // No permitir fechas pasadas en UI
+      const fechaIn = document.getElementById("citaFecha");
+      if (fechaIn) fechaIn.min = new Date().toISOString().slice(0, 10);
+      showCliSection("inicio");
+    })();
+  </script>
+</body>
+</html>
+

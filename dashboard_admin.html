@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Panel Administrador</title>
+<link rel="stylesheet" href="css/estilos.css">
+<script src="js/script.js"></script>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+  }
+
+  .admin-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  .admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .admin-header h1 {
+    margin: 0;
+  }
+
+  .logout-btn {
+    padding: 8px 14px;
+    border-radius: 18px;
+    border: none;
+    background-color: #dc3545;
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .logout-btn:hover {
+    background-color: #b52a36;
+  }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr;
+    gap: 20px;
+  }
+
+  .cards,
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card,
+  .panel-box {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .card h3,
+  .panel-box h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+
+  .card p,
+  .panel-box p {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+
+  .card button,
+  .panel-box a.btn-link {
+    padding: 8px 14px;
+    border-radius: 18px;
+    border: none;
+    background-color: #007bff;
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .card button:hover,
+  .panel-box a.btn-link:hover {
+    background-color: #0056b3;
+  }
+
+  details {
+    margin-top: 8px;
+  }
+
+  details summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: #007bff;
+    list-style: none;
+  }
+
+  details summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .list-simple {
+    margin: 8px 0 0 0;
+    padding-left: 16px;
+    font-size: 14px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .stat-box {
+    background-color: #f8f9ff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+
+  .stat-box span {
+    display: block;
+    font-size: 13px;
+    color: #666666;
+  }
+
+  .stat-box strong {
+    font-size: 20px;
+    color: #007bff;
+  }
+</style>
+</head>
+<body>
+
+<div class="admin-dashboard">
+  <div class="admin-header">
+    <h1>Panel Administrador</h1>
+    <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="cards">
+      <div class="card">
+        <h3>Gestión de Citas</h3>
+        <p>Crear, reprogramar o cancelar citas. Asignar empleados y revisar el calendario completo.</p>
+        <a href="admin/citas.html"><button>Ir a citas</button></a>
+      </div>
+
+      <div class="card">
+        <h3>Servicios</h3>
+        <p>Lista plegable de servicios y precios actuales.</p>
+        <details>
+          <summary>Ver servicios y precios</summary>
+          <ul id="lista-servicios-admin" class="list-simple"></ul>
+        </details>
+        <a href="admin/servicios.html" class="btn-link">Editar servicios</a>
+      </div>
+
+      <div class="card">
+        <h3>Empleados</h3>
+        <p>Consulta rápida de empleados y su especialidad.</p>
+        <details>
+          <summary>Ver empleados</summary>
+          <ul id="lista-empleados-admin" class="list-simple"></ul>
+        </details>
+        <a href="admin/empleados.html" class="btn-link">Gestionar empleados</a>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="panel-box">
+        <h3>Pagos</h3>
+        <p>Registrar pagos de citas y revisar el historial.</p>
+        <a href="admin/pagos.html" class="btn-link">Registrar / ver pagos</a>
+      </div>
+
+      <div class="panel-box">
+        <h3>Estadísticas rápidas</h3>
+        <p>Resumen básico de la información del sistema.</p>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <span>Total de citas</span>
+            <strong id="stat-total-citas">0</strong>
+          </div>
+          <div class="stat-box">
+            <span>Servicios activos</span>
+            <strong id="stat-total-servicios">0</strong>
+          </div>
+          <div class="stat-box">
+            <span>Empleados registrados</span>
+            <strong id="stat-total-empleados">0</strong>
+          </div>
+        </div>
+        <a href="admin/reportes.html" class="btn-link" style="margin-top:10px;display:inline-block;">Ver reportes detallados</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function logout() {
+  window.location = "login.html";
+}
+
+function cargarPanelAdmin() {
+  const servicios = obtenerServicios();
+  const empleados = obtenerEmpleados();
+  const citas = obtenerCitas();
+
+  const ulServicios = document.getElementById("lista-servicios-admin");
+  const ulEmpleados = document.getElementById("lista-empleados-admin");
+
+  if (ulServicios) {
+    ulServicios.innerHTML = "";
+    servicios.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = s.nombre + " - $" + s.precio;
+      ulServicios.appendChild(li);
+    });
+  }
+
+  if (ulEmpleados) {
+    ulEmpleados.innerHTML = "";
+    empleados.forEach(e => {
+      const li = document.createElement("li");
+      li.textContent = e.nombre + " (" + e.especialidad + ")";
+      ulEmpleados.appendChild(li);
+    });
+  }
+
+  const statCitas = document.getElementById("stat-total-citas");
+  const statServicios = document.getElementById("stat-total-servicios");
+  const statEmpleados = document.getElementById("stat-total-empleados");
+
+  if (statCitas) statCitas.textContent = citas.length;
+  if (statServicios) statServicios.textContent = servicios.length;
+  if (statEmpleados) statEmpleados.textContent = empleados.length;
+}
+
+document.addEventListener("DOMContentLoaded", cargarPanelAdmin);
+</script>
+
+</body>
+</html>

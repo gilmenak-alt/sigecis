@@ -1,0 +1,33 @@
+<h2>Citas asignadas</h2>
+
+<table id="tabla"></table>
+
+<script>
+
+let citas=JSON.parse(localStorage.getItem("citas"));
+
+let tabla=document.getElementById("tabla");
+
+tabla.innerHTML="<tr><th>Servicio</th><th>Empleado</th><th>Fecha</th><th>Hora</th></tr>";
+
+citas.forEach(c=>{
+
+tabla.innerHTML+=`
+
+<tr>
+
+<td>${c.servicio}</td>
+
+<td>${c.empleado}</td>
+
+<td>${c.fecha}</td>
+
+<td>${c.hora}</td>
+
+</tr>
+
+`;
+
+});
+
+</script>

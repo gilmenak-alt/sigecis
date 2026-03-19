@@ -1,0 +1,13 @@
+<h2>Reportes</h2>
+
+<p id="totalCitas"></p>
+
+<script>
+
+let citas=JSON.parse(localStorage.getItem("citas"));
+
+document.getElementById("totalCitas").innerText=
+
+"Total de citas registradas: "+citas.length;
+
+</script>

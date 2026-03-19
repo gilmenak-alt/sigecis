@@ -1,0 +1,83 @@
+<select id="servicio"></select>
+
+<select id="empleado"></select>
+
+<input id="cliente" placeholder="Nombre del cliente">
+
+<input type="date" id="fecha">
+
+<input type="time" id="hora">
+
+<button onclick="agendar()">Agendar</button>
+
+<script>
+
+let servicios=JSON.parse(localStorage.getItem("servicios"));
+
+let select=document.getElementById("servicio");
+
+servicios.forEach(s=>{
+
+let option=document.createElement("option");
+
+option.value=JSON.stringify(s);
+
+option.text=s.nombre+" - $"+s.precio;
+
+select.add(option);
+
+});
+
+
+let empleados=JSON.parse(localStorage.getItem("empleados"));
+
+let select2=document.getElementById("empleado");
+
+empleados.forEach(e=>{
+
+let option=document.createElement("option");
+
+option.text=e.nombre+" - "+e.especialidad;
+
+select2.add(option);
+
+});
+
+
+function agendar(){
+
+let citas=JSON.parse(localStorage.getItem("citas"));
+
+let cliente=document.getElementById("cliente").value;
+
+let servicio=JSON.parse(document.getElementById("servicio").value);
+
+let empleado=document.getElementById("empleado").value;
+
+let fecha=document.getElementById("fecha").value;
+
+let hora=document.getElementById("hora").value;
+
+citas.push({
+
+cliente:cliente,
+
+servicio:servicio.nombre,
+
+precio:servicio.precio,
+
+empleado:empleado,
+
+fecha:fecha,
+
+hora:hora
+
+});
+
+localStorage.setItem("citas",JSON.stringify(citas));
+
+alert("Cita agendada");
+
+}
+
+</script>
